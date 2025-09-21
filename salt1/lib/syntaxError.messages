@@ -1,0 +1,243 @@
+main: TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET RBRACKET TRUE
+# expected_fun
+# expected_fun2
+
+expected function
+
+# ----------------------------------------------------------
+
+main: FN TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET LET MUT TRUE
+# bad_fun_name
+# bad_var_name
+
+expected identifier
+
+# ----------------------------------------------------------
+
+main: FN IDENT TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET BOX TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET ASSERT TRUE
+# missing_param_paren
+# missing_box_paren
+# missing_assert_paren
+
+expected `(`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN TRUE
+main: FN IDENT LPAREN IDENT COLON BOOLTY COMMA TRUE
+# bad_fun_param
+# bad_fun_param2
+
+expected identifier or `)`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN IDENT TRUE
+# missing_fun_param_colon
+
+expected `:`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN IDENT COLON TRUE
+main: FN IDENT LPAREN IDENT COLON LPAREN TRUE
+main: FN IDENT LPAREN IDENT COLON LPAREN BOOLTY COMMA TRUE
+main: FN IDENT LPAREN IDENT COLON AMPERSAND TRUE
+main: FN IDENT LPAREN IDENT COLON AMPERSAND MUT TRUE
+main: FN IDENT LPAREN RPAREN ARROW TRUE
+# bad_param_type
+# bad_tuple_type
+# bad_tuple_type2
+# bad_borrow_type
+# bad_mut_borrow_type
+# bad_output_type
+
+expected type
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN IDENT COLON LPAREN BOOLTY TRUE
+# missing_tuple_comma
+
+expected `,`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN IDENT COLON LPAREN BOOLTY COMMA BOOLTY COMMA TRUE
+# missing tuple type
+
+expected type or `)`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN IDENT COLON BOOLTY TRUE
+main: FN IDENT LPAREN IDENT COLON LPAREN BOOLTY COMMA BOOLTY TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT LPAREN IDENT SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET LPAREN TRUE SEMICOLON
+# missing_param_close
+# missing_tuple_close
+# bad_fun_call_params
+# bad tuple
+
+expected `,` or `)`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN TRUE
+# missing_open_bracket
+
+expected `->` or `{`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE SEMICOLON SEMICOLON
+# missing_expression
+# missing_expression2
+
+expected expression or statement
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET STAR TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET AMPERSAND TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET AMPERSAND MUT TRUE
+# missing_place
+# missing_place_borrow
+# missing_place_mut_borrow
+
+expected place expression
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET STAR IDENT TRUE
+# bad_after_ident
+
+unexpected token after identifier
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT DOT TRUE
+# bad_access
+
+expected accessor index
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN ARROW BOOLTY TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET IF IDENT SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IF IDENT LBRACKET RBRACKET ELSE TRUE
+# missing_open_bracket2
+# missing_open_bracket_if
+# missing_open_bracket_if_else
+
+expected `{`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET ASSERT LPAREN IDENT SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET BOX LPAREN IDENT SEMICOLON
+# bad_assert
+# bad_box
+# bad_fun_call
+
+expected `)`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT LPAREN IDENT COMMA SEMICOLON
+# bad_fun_call_with_comma
+
+expected expression or `)`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET IF IDENT LBRACKET RBRACKET ADD
+# bad_else
+
+expected expression or statement or `else`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET LET TRUE
+# missing_mut
+
+expected identifer or `mut`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET LET IDENT TRUE
+# missing_equal
+
+expected `=`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET LBRACKET RBRACKET RPAREN
+main: FN IDENT LPAREN RPAREN LBRACKET LET IDENT EQ TRUE RPAREN
+# unclosed_paren2
+
+unexpected `)`
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET LPAREN SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET NOT SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET SUB SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IF SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET BOX LPAREN SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET ASSERT LPAREN SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT LPAREN SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT OR SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT AND SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT BEQ SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT NEQ SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT LTE SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT LT SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT GTE SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT GT SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT ADD SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT SUB SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT STAR SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT MOD SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT DIV SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET LPAREN IDENT COMMA SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT EQ SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT ADDEQ SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT SUBEQ SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT MULEQ SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT DIVEQ SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET IDENT MODEQ SEMICOLON
+main: FN IDENT LPAREN RPAREN LBRACKET LET IDENT EQ SEMICOLON
+
+expected expression
+
+# ----------------------------------------------------------
+
+main: FN IDENT LPAREN RPAREN LBRACKET NOT TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET SUB TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET IF TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE OR TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE AND TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE BEQ TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE NEQ TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE LTE TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE LT TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE GTE TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE GT TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE ADD TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE SUB TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE DIV TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE EQ TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE ADDEQ TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE SUBEQ TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE MULEQ TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE DIVEQ TRUE TRUE
+main: FN IDENT LPAREN RPAREN LBRACKET TRUE MODEQ TRUE TRUE
+
+unexpected token within expression

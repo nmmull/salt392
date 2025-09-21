@@ -1,0 +1,11 @@
+(lang dune 3.19)
+
+(name salt1)
+
+(generate_opam_files true)
+
+(package
+ (name salt1)
+ (depends ocaml menhirLib))
+
+(using menhir 3.0)

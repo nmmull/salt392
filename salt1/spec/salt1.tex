@@ -1,0 +1,424 @@
+\documentclass[10pt]{article}
+
+\usepackage{mathpazo}
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage[margin=1in]{geometry}
+\usepackage{csquotes}
+\usepackage{amsthm, amsmath, amssymb, mathtools, stmaryrd}
+\usepackage{thmtools, thm-restate}
+\usepackage{todonotes} %% has coloring?
+\usepackage{bussproofs}
+
+\title{\texttt{salt1}: Mutable Variables, Immutable References}
+\author{\texttt{CS392-M1}: \textit{Rust, In Practice and in Theory}}
+\date{}
+
+\newcommand{\code}[1]{\textcolor{purple}{\textnormal{\texttt{#1}}}}
+
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\B}{\mathbb B}
+
+\newcommand{\bop}[3]{#2 \ #1 \ #3}
+\newcommand{\uop}[2]{#1 \ #2}
+\newcommand{\add}{\code{+}}
+\newcommand{\sub}{\code{-}}
+\newcommand{\mul}{\code{*}}
+\newcommand{\divv}{\code{/}}
+\newcommand{\modd}{\code{\%}}
+\newcommand{\andd}{\code{\&\&}}
+\newcommand{\orr}{\code{||}}
+\newcommand{\asgn}{\code{=}}
+\newcommand{\nott}{\code{!}}
+\newcommand{\unitt}{\code{()}}
+\newcommand{\tru}{\code{true}}
+\newcommand{\fls}{\code{false}}
+
+\newcommand{\lett}[2]{\code{let} \ #1 \ \code{=} \ #2}
+\newcommand{\letmut}[2]{\code{let} \ #1 \ \code{=} \ #2}
+
+\newcommand{\intty}{\code{i32}}
+\newcommand{\boolty}{\code{bool}}
+\newcommand{\unitty}{\code{()}}
+
+\newcommand{\alt}{\ | \ }
+\newcommand{\cceq}{\Coloneqq}
+
+\newcommand{\etyj}[3]{#1 \vdash #2 : #3}
+\newcommand{\styj}[3]{#1 \vdash #2 \dashv #3}
+
+\newcommand{\evj}[3]{\langle \ #1 \ , \ #2 \ \rangle \Downarrow #3}
+\newcommand{\evjss}[4]{\langle \ #1 \ , \ #2 \ \rangle \longrightarrow \langle \ #3 \ , \ #4 \ \rangle}
+\newcommand{\evjssm}[4]{\langle \ #1 \ , \ #2 \ \rangle \longrightarrow^\star \langle \ #3 \ , \ #4 \ \rangle}
+
+\newtheorem*{definition}{Definition}
+\newtheorem*{theorem}{Theorem}
+
+\begin{document}
+\maketitle
+
+\section{Syntax}
+
+The following is the BNF specification for the syntax of
+\texttt{salt1}.  We fix an arbitrary set $\mathcal V$ of variables.
+
+\begin{align*}
+  x & &\text{(variables, $\mathcal V$)} \\
+  n & &\text{(integers, $\mathbb Z$)} \\
+  \ell &\cceq \ell_x &\text{(locations, $\mathcal L$)} \\
+  w &\cceq \{ \code * \} \ x &\text{(place expression, $\mathcal W$)} \\
+  v &\cceq \unitt \alt n \alt \ell  &\text{(values, $\mathsf{Val}$)} \\
+  e &\cceq \unitt
+  \alt n
+  \alt w
+  \alt \code{\&} \ w  \alt \bop {\asgn} x e &\text{(expressions, $\mathcal E$)} \\
+  p &\cceq \{ s \ \code{;} \} \ e &\text{(programs, $\mathcal P$)} \\
+  s &\cceq e \alt \code{let} \ [\code{mut}] \ x \ \code{=} \ e &\text{(statements, $\mathcal {S}$)} \\
+  t &\cceq \intty \alt \unitty \alt \code{\&} \ w &\text{(types, $\mathcal T$)} \\
+  m &\cceq \mathsf{imm} \alt \mathsf{mut} &\text{(mutability)}
+\end{align*}
+
+\section{Typing}
+
+There are three kinds of typing judgments:
+\begin{align*}
+  \Gamma &\vdash e : t \dashv \Gamma &\text{(expressions)} \\
+  \Gamma &\vdash s \dashv \Gamma &\text{(statments)} \\
+  \Gamma &\vdash p : t \dashv \Gamma &\text{(programs)}
+\end{align*}
+$\Gamma$ is a typing context which we will take to be a map from
+variables to types tagged with mutability information (i.e., a map of
+the form $\mathcal V \mapsto \mathcal T \times \{\mathsf{imm},
+\mathsf{mut}\}$). Note that expression can have side-effects because
+of the assignment operator.  The following are the typing rules for
+\texttt{salt1}.
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(unit)}
+  \UnaryInfC{$\etyj \Gamma \unitt \unitty \dashv \Gamma$}
+  \DisplayProof
+  \qquad
+  \AxiomC{}
+  \RightLabel{(int)}
+  \UnaryInfC{$\etyj \Gamma n \intty \dashv \Gamma$}
+  \DisplayProof
+  \qquad
+  \AxiomC{$(x \mapsto t^m) \in \Gamma$}
+  \RightLabel{(var)}
+  \UnaryInfC{$\Gamma \vdash x : t \dashv \Gamma$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\Gamma \vdash w_1 : \code{\&} \ w_2 \dashv \Gamma$}
+  \AxiomC{$\Gamma \vdash w_2 : t \dashv \Gamma$}
+  \RightLabel{(deref)}
+  \BinaryInfC{$\Gamma \vdash \code{*} \ w_1 : t \dashv \Gamma$}
+  \DisplayProof
+  \qquad
+  \AxiomC{$\Gamma \vdash w : t \dashv \Gamma$}
+  \RightLabel{(imm-borrow)}
+  \UnaryInfC{$\Gamma \vdash \code{\&} \ w : \code{\&} \ w \dashv \Gamma$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{($\approx$-int)}
+  \UnaryInfC{$\Gamma \vdash \intty \approx \intty$}
+  \DisplayProof
+  \qquad
+  \AxiomC{}
+  \RightLabel{($\approx$-unit)}
+  \UnaryInfC{$\Gamma \vdash \unitty \approx \unitty$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash w_1 : t_1 \dashv \Gamma$}
+  \AxiomC{$\Gamma \vdash w_2 : t_2 \dashv \Gamma$}
+  \AxiomC{$\Gamma \vdash t_1 \approx t_2$}
+  \RightLabel{($\approx$-borrow)}
+  \TrinaryInfC{$\Gamma \vdash \code{\&} \ w_1 \approx \code{\&} \ w_2$}
+\end{prooftree}
+
+\begin{definition}
+  $\mathsf{writable}(\Gamma, x)$ is equivalent to $\nexists y . (y \mapsto \textnormal{\code{\&}} \ x) \in \Gamma$.
+\end{definition}
+
+\begin{prooftree}
+  \AxiomC{$(x \mapsto t_1^{\mathsf{mut}}) \in \Gamma_1$}
+  \AxiomC{$\Gamma_1 \vdash e : t_2 \dashv \Gamma_2$}
+  \AxiomC{$\Gamma_2 \vdash t_1 \approx t_2$}
+  \AxiomC{$\mathsf{writable}(\Gamma_2, x)$}
+  \RightLabel{(assign)}
+  \QuaternaryInfC{$\Gamma_1 \vdash x \ \code{=} \ e : \code{()} \dashv \Gamma_2[x \mapsto t_2^{\mathsf{mut}}]$}
+\end{prooftree}
+
+\begin{center}
+  \AxiomC{$\Gamma_1 \vdash e : t \dashv \Gamma_2$}
+  \RightLabel{(expr-stmt)}
+  \UnaryInfC{$\Gamma_1 \vdash e \dashv \Gamma_2$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\Gamma_1 \vdash e : t \dashv \Gamma_2$}
+  \AxiomC{$x \not \in \mathsf{dom}(\Gamma_2)$}
+  \RightLabel{(let)}
+  \BinaryInfC{$\styj {\Gamma_1} {\lett x e} {\Gamma_2[x \mapsto t^{\mathsf{imm}}]}$}
+  \DisplayProof
+  \qquad
+  \AxiomC{$\Gamma_1 \vdash e : t \dashv \Gamma_2$}
+  \AxiomC{$x \not \in \mathsf{dom}(\Gamma_2)$}
+  \RightLabel{(let-mut)}
+  \BinaryInfC{$\Gamma_1 \vdash \code{let} \ \code{mut} \ x \ \code{=} \ e \dashv {\Gamma_2[x \mapsto t^{\mathsf{mut}}]}$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma_1 \vdash s \dashv \Gamma_2$}
+  \AxiomC{$\Gamma_2 \vdash p : t \dashv \Gamma_3$}
+  \RightLabel{(prog)}
+  \BinaryInfC{$\Gamma_1 \vdash s \ \code{;} \ p : t \dashv \Gamma_3$}
+\end{prooftree}
+
+\section{Evaluation}
+\newcommand{\config}[2]{\langle \ #1 \ , \ #2 \ \rangle}
+
+There are three kinds of (big-step) evaluation judgments:
+\begin{align*}
+  \config S e &\Downarrow \config S v &\text{(expressions)} \\
+  \config S s &\Downarrow S &\text{(statements)} \\
+  \config S p &\Downarrow \config S v &\text{(programs)}
+\end{align*}
+$S$ stands is a store (a.k.a., dynamic environment) which we will take
+to be a map from locations to values (i.e., a map of the form
+$\mathcal L \mapsto \mathsf{Val}$).  Note that expressions can have
+side-effects because of the assignment operator.  The following are
+the evaluation rules for \texttt{salt1}.
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(unit)}
+  \UnaryInfC{$\langle \ S \ , \ \unitt \ \rangle \Downarrow \langle \ S \ , \ \unitt \ \rangle$}
+  \DisplayProof
+  \qquad
+  \AxiomC{}
+  \RightLabel{(int)}
+  \UnaryInfC{$\langle \ S \ , \ n \ \rangle \Downarrow \langle \ S \ , \ n \ \rangle$}
+  \DisplayProof
+\end{center}
+
+\begin{definition}
+  The functions
+  $\mathsf{loc} : \mathcal (\mathcal L \mapsto \mathsf{Val}) \times \mathcal W \to \mathcal L$
+  and
+  $\mathsf{read} : \mathcal (\mathcal L \mapsto \mathsf{Val}) \times \mathcal W \to \mathsf{Val}$
+  are given as:
+  \begin{align*}
+    \mathsf{loc}(S, x) &= \ell_x  \\
+    \mathsf{loc}(S, \code{*}\ w) &= S(\mathsf{loc}(S, w)) \\
+    \mathsf{read}(S, w) &= S(\mathsf{loc}(S, w))
+  \end{align*}
+\end{definition}
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(place)}
+  \UnaryInfC{$\langle \ S \ , \ w \ \rangle \Downarrow \langle \ S \ , \ \mathsf{read}(S, w) \ \rangle$}
+  \DisplayProof
+  \qquad
+  \AxiomC{}
+  \RightLabel{(imm-borrow)}
+  \UnaryInfC{$\langle \ S \ , \ \textnormal{\code{\&}} \ w \ \rangle \Downarrow \langle \ S \ , \ \mathsf{loc}(S, w) \ \rangle$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$\langle \ S_1 \ , \ e \ \rangle \Downarrow \langle \ S_2 \ , \ v \ \rangle$}
+  \RightLabel{(assign)}
+  \UnaryInfC{$\langle \ S_1 \ , \ x \ \code{=} \ e \ \rangle \Downarrow \ \langle \ S_2[\ell_x \mapsto v] \ , \ \code{()} \ \rangle$}
+\end{prooftree}
+
+\begin{center}
+  \AxiomC{$\langle  \ S_1 \ , \ e \ \rangle \Downarrow \langle \ S_2 \ , \ v \ \rangle$}
+  \RightLabel{(expr-stmt)}
+  \UnaryInfC{$\langle  \ S_1 \ , \ e \ \rangle \Downarrow S_2$}
+  \DisplayProof
+  \qquad
+  \AxiomC{$\langle \ S_1 \ , \ e \ \rangle \Downarrow \langle \ S_2 \ , \ v \ \rangle$}
+  \RightLabel{(let)}
+  \UnaryInfC{$\evj {S_1} {\code{let} \ [\code{mut}] \ x \ \code= \ e} {S_2[\ell_x \mapsto v]}$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\evj {S_1} {s} {S_2}$}
+  \AxiomC{$\evj {S_2} p {\config {S_3} v}$}
+  \RightLabel{(prog)}
+  \BinaryInfC{$\evj {S_1} {s \ \code{;} \ p} {\config {S_3} v}$}
+  \DisplayProof
+\end{center}
+
+\section{Reduction}
+
+
+There are three kinds of reduction judgments:
+\begin{align*}
+  \config S e &\longrightarrow \config S e &\text{(expressions)} \\
+  \config S s &\longrightarrow \config S s &\text{(statements)} \\
+  \config S p &\longrightarrow \config S p &\text{(programs)}
+\end{align*}
+We will extend our syntax to deal to included holes:
+\begin{align*}
+  e\llbracket\ \ \rrbracket &\cceq \llbracket\ \ \rrbracket
+  \alt \bop {\code{=}} {e\llbracket\ \ \rrbracket} {e}
+  \alt \bop {\code{=}} {e} {e\llbracket\ \ \rrbracket} &\text{(holed expressions)} \\
+  s\llbracket\ \ \rrbracket &\cceq \lett x e\llbracket\ \ \rrbracket &\text{(holed statement)}\\
+  p\llbracket \ \ \rrbracket &\cceq \{ s\llbracket \ \ \rrbracket \ \code{;} \}
+  \alt \{ s \ \code{;} \} \ e\llbracket \ \ \rrbracket &\text{(holed programs)}
+\end{align*}
+
+\noindent We don't need a dummy statement $\bullet$ because expressions are considered expressions The following are the reduction rules for \texttt{salt1}.
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(place)}
+  \UnaryInfC{$\evjss S w S {\mathsf{read}(S, w)}$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(imm-borrow)}
+  \UnaryInfC{$\langle \ S_1 \ , \ \textnormal{\code{\&}} \ w \ \rangle \longrightarrow \langle \ S \ , \ \textsf{loc}(S, w) \ \rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(assign)}
+  \UnaryInfC{$\langle \ S \ , \ x \ \code{=} \ v \ \rangle \longrightarrow \langle \ S[\ell_x \mapsto v] \ , \ \unitt \ \rangle$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(let)}
+  \UnaryInfC{$\evjss S {\code{let} \ [\code{mut}] \ x \ \code{=} \ v} {S[\ell_x \mapsto v]} \unitt$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\evjss S {s_1} {S'} {s_1'}$}
+  \RightLabel{(prog$_1$)}
+  \UnaryInfC{$\evjss S {\ s_1 \ \code ; \dots \code ; \ s_k \ \code ; \ e} {S'} {s_1' \ \code ; \dots \code ; \ s_k \ \code ; \ e} $}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(prog$_2$)}
+  \UnaryInfC{$\evjss S {v \ \code ; \ s_2 \ \code ; \dots \code ; \ s_k \ \code ; \ e} S {s_2 \ \code ; \dots \code ; \ s_k \ \code ; \ e} $}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\evjss {S_1} {e_1} {S_2} {e_2}$}
+  \RightLabel{\text{(hole)}}
+  \UnaryInfC{$\evjss {S_1} {\sigma\llbracket e_1 \rrbracket} {S_2} {\sigma\llbracket e_2 \rrbracket}$}
+\end{prooftree}
+
+\section{Meta-Theory}
+
+\begin{theorem}
+  (Operational Adequacy) For any stores $S_1$, program $p$, and value
+  $v$, if $\langle \ S_1 \ , \ p \ \rangle \Downarrow v$, then there is a store $S_2$
+  such that $\evjssm {S_1} p {S_2} v$.
+\end{theorem}
+
+\begin{theorem}
+  (Operational Soundness)
+  For any stores $S_1$ and $S_2$, program $p$, and value $v$, if $\evjssm {S_1} p {S_2} v$ then $\langle \ S_1 \ , \ p \ \rangle \Downarrow v$.
+\end{theorem}
+
+\begin{definition}
+The types of values are given as:
+\begin{align*}
+  \mathcal T(n) &= \code{i32} \\
+  \mathcal T(\code{()}) &= \code{()} \\
+  \mathcal T(\ell_x) &= \code{\&} \ x
+\end{align*}
+\end{definition}
+
+\begin{definition}
+  For any context $\Gamma$ and store $S$, we write $\Gamma \sim S$ to mean that $\mathsf{dom}(S) = \{ \ell_x : x \in \mathsf{dom}(\Gamma)\}$ and $\Gamma \vdash \Gamma(x) \approx \mathcal T(S(\ell_x))$ for all $x \in \mathsf{dom}(\Gamma)$.
+\end{definition}
+
+%% \begin{theorem}
+%%   (Progress)
+%%   Let $\Gamma$ be a context and $S$ a store such that $\Gamma \sim S$.
+%%   For any program $p$ and type $t$, if $\etyj \Gamma p t$ then there is a store $S'$ and program $p'$ such that $\evjss S p {S'} {p'}$.
+%% \end{theorem}
+
+%% \begin{theorem}
+%%   (Preservation)
+%%   Let $\Gamma$ be a context and $S$ a store such that $\Gamma \sim S$.
+%%   For any store $S'$, programs $p$ and $p'$, and type $t$, if $\etyj \Gamma p t$ and $\evjss S p {S'} {p'}$ then $\etyj \Gamma {p'} t$.
+%% \end{theorem}
+
+%% \begin{theorem}
+%%   (Normalization)
+%%   Let $\Gamma$ be a context and $S$ a store such that $\Gamma \sim S$.
+%%   For any type $t$, if $\etyj \Gamma p t$ then there is a store $S'$ and value $v$ such that $\evjssm S p {S'} v$.
+%% \end{theorem}
+
+\begin{theorem}
+  (Type Soundness)
+  Let $\Gamma$ is a context, let $S_1$ be a store such that $\Gamma_1 \sim S_1$.
+  For any program $p$ and type $t$, if $\etyj {\Gamma_1} p t \dashv \Gamma_2$ then there is a store $S_2$ value $v$ such that $\evj {S_1} p {\config {S_2} v}$ and $\Gamma_2 \sim S_2$ and $\Gamma_2 \vdash t \approx \mathcal T(v)$.
+\end{theorem}
+
+\begin{proof}
+  We first prove soundness for expression by induction on derivations.
+  \begin{itemize}
+  \item (unit) Obvious.
+  \item (int) Obvious.
+  \item (var) This follow immediately from the (var) rules and $\Gamma_1 \sim S_1$.
+  \item (deref)
+    By the IH, we know that $\config {S_1} {w_1} \Downarrow \config {S_1} {\mathsf{read}(S_1, w_1)}$ where $\Gamma_1 \vdash \code{\&} \ w_2 \approx \mathcal T(\mathsf{read}(S_1, w_1))$ and $\config {S_1} {w_2} \Downarrow \config {S_1} {\mathsf{read}(S_1, w_2)}$ where $\Gamma_1 \vdash t \approx \mathcal T(\mathsf{read}(S_1, w_2))$.
+    In order for the former type equivalence to be derivable, it must be that $\mathsf{read}(S_1, w_1) = S_1(\mathsf{loc}(S_1, w_1)) = \ell_z$ for some variable $z$ so that $\mathcal T(S_1(\mathsf{loc}(S_1, w_1))) = \code{\&} \ z$.
+    Furthermore, this equivalence must follow from the ($\approx$-borrow) rule, which implies that $\Gamma_1 \vdash t \approx \Gamma_1(z)$ (exercise).
+    Next, note that
+    \begin{align*}
+      \mathcal T(\mathsf{read}(S_1, \code{*} \ w_1)) =
+      \mathcal T(S_1(S_1(\mathsf{loc}(S_1, w_1)))) =
+      \mathcal T(S_1(\ell_z))
+    \end{align*}
+    and $\Gamma_1 \vdash \Gamma_1(z) \approx \mathcal T(S_1(\ell_z))$ since $\Gamma_1 \sim S_1$.
+    Finally, $\Gamma \vdash \cdot \approx \cdot$ defines an equivalence relation on types (exercise), meaning that $\Gamma_1 \vdash t \approx \mathcal T(\mathsf{read}(S_1, \code{*} \ w_1))$ as desired.
+  \item (imm-borrow)
+    By the IH, We know that $\config {S_1} w \Downarrow \config {S_1} {S_1(\mathsf{loc}(S_1, w)}$ and $\Gamma_1 \vdash t \approx \mathcal T(S_1(\mathsf{loc}(S_1, w))$.
+    We can take $v$ to be $\mathsf{loc}(S_1, w)$ by the (imm-borrow) evaluation rule.
+    We need to verify that $\Gamma_1 \vdash \code{\&} \ w \approx \mathcal T(\mathsf{loc}(S_1, w))$.
+    Since $\mathsf{loc}(S_1, w)$ appears as an argument to $S_1$ in a type equivalence, it be of the form $\ell_z$ for some variable $z$.
+    Thus, it suffices to note that $\Gamma_1 \vdash \Gamma_1(z) \approx \mathcal T(S_1(\ell_z))$ by $\Gamma_1 \sim S_1$ and so we can derive:
+    \begin{center}
+      \AxiomC{$\Gamma \vdash w : t \dashv \Gamma$}
+      \AxiomC{$\Gamma \vdash z : \Gamma(z) \dashv \Gamma$}
+      \AxiomC{$\Gamma \vdash t \approx \Gamma(z)$}
+      \TrinaryInfC{$\Gamma \vdash \code{\&} \ w \approx \mathcal T(\mathsf{loc}(S, w))$}
+      \DisplayProof
+    \end{center}
+  \item (assign)
+    By the IH, we have a store $S_2$ and value $v$ such that $\config {S_1} {e} \Downarrow \config {S_2} {v}$ where $\Gamma_2 \sim S_2$ and $\Gamma_2 \vdash t_2 \approx \mathcal T(v)$.
+    By the (assign) evaluation rule, we have $\config {S_1} {x \ \code{=} \ e} \Downarrow \config {S_2[\ell_x \mapsto v]} {\code{()}}$.
+    We need to show that $\Gamma_2[x \mapsto t_2] \sim S_2[\ell_x \mapsto v]$.
+    This follows from the fact that $\Gamma_2 \vdash t_1 \approx t_2$ by assumption and that type equivalence is an equivalence relation ($x$ is the only variable we need to check for the $\sim$-condition).
+  \end{itemize}
+  Next we prove soundness for statements by induction on derivations.
+  \begin{itemize}
+  \item (expr-stmt) This follows directly from soundness for expressions
+  \item (let-[mut]) By the IH, there is a store $S_2$ and a value $v$ such that $\config{S_1}{e} \Downarrow \config{S_2}{v}$ and $\Gamma_2 \sim S_2$ and $\Gamma_2 \vdash t \approx \mathcal T(v)$.
+    By the (let) evaluation rule $\evj {S_1} {\code{let} \ [\code{mut}] \ x \ \code= \ e} {S_2[\ell_x \mapsto v]}$.
+    It follows immediately that $\Gamma_2[x \mapsto t^m] \sim S_2[\ell_x \mapsto v]$; in particular $\Gamma_2[x \mapsto t^m] \vdash \Gamma(x) \approx \mathcal T(S_2[\ell_x \mapsto v](\ell_x)])$.
+  \end{itemize}
+  Soundness of programs then follows immediately by induction on derivations using the (prog) rule.
+\end{proof}
+\end{document}
