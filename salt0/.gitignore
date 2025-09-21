@@ -1,0 +1,8 @@
+_build
+*.fls
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log

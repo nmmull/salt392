@@ -1,0 +1,320 @@
+\documentclass[10pt]{article}
+
+\usepackage{mathpazo}
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage[margin=1in]{geometry}
+\usepackage{csquotes}
+\usepackage{amsthm, amsmath, amssymb, mathtools, stmaryrd}
+\usepackage{thmtools, thm-restate}
+\usepackage{todonotes} %% has coloring?
+\usepackage{bussproofs}
+
+\title{\texttt{salt0}: Straight Line Programs}
+\author{\texttt{CS392-M1}: \textit{Rust, In Practice and in Theory}}
+\date{}
+
+\newcommand{\code}[1]{\textcolor{purple}{\textnormal{\texttt{#1}}}}
+
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\B}{\mathbb B}
+
+\newcommand{\bop}[3]{#2 \ #1 \ #3}
+\newcommand{\uop}[2]{#1 \ #2}
+\newcommand{\add}{\code{+}}
+\newcommand{\sub}{\code{-}}
+\newcommand{\mul}{\code{*}}
+\newcommand{\divv}{\code{/}}
+\newcommand{\modd}{\code{\%}}
+\newcommand{\andd}{\code{\&\&}}
+\newcommand{\orr}{\code{||}}
+\newcommand{\nott}{\code{!}}
+\newcommand{\unitt}{\code{()}}
+\newcommand{\tru}{\code{true}}
+\newcommand{\fls}{\code{false}}
+
+\newcommand{\lett}[2]{\code{let} \ #1 \ \code{=} \ #2}
+
+\newcommand{\intty}{\code{i32}}
+\newcommand{\boolty}{\code{bool}}
+\newcommand{\unitty}{\code{()}}
+
+\newcommand{\alt}{\ | \ }
+\newcommand{\cceq}{\Coloneqq}
+
+\newcommand{\etyj}[3]{#1 \vdash #2 : #3}
+\newcommand{\styj}[3]{#1 \vdash #2 \dashv #3}
+
+\newcommand{\evj}[3]{\langle \ #1 \ , \ #2 \ \rangle \Downarrow #3}
+\newcommand{\evjss}[4]{\langle \ #1 \ , \ #2 \ \rangle \longrightarrow \langle \ #3 \ , \ #4 \ \rangle}
+\newcommand{\evjssm}[4]{\langle \ #1 \ , \ #2 \ \rangle \longrightarrow^\star \langle \ #3 \ , \ #4 \ \rangle}
+
+\newtheorem*{theorem}{Theorem}
+\newtheorem*{definition}{Definition}
+
+\begin{document}
+\maketitle
+
+\section{Syntax}
+
+The following is the BNF specification for the syntax of
+\texttt{salt0}.  We fix an arbitrary set $\mathcal V$ of variables.
+\begin{align*}
+  x & &\text{(variables, $\mathcal V$)} \\
+  n & &\text{(integers, $\mathbb Z$)} \\
+  v &\cceq n \alt \unitt &\text{(values, $\mathsf{Val}$)} \\
+  e &\cceq n
+  \alt \unitt
+  \alt x
+  \alt \bop {\code{+}} e e &\text{(expressions, $\mathcal E$)} \\
+  s &\cceq \lett x e &\text{(statements, $\mathcal S$)} \\
+  p &\cceq \{ s \ \code{;} \} \ e &\text{(programs, $\mathcal P$)} \\
+  t &\cceq \intty \alt \unitty &\text{(types, $\mathcal T$)}
+\end{align*}
+
+\section{Typing}
+
+There are three kinds of typing judgments:
+\begin{align*}
+  \Gamma &\vdash e : t &\text{(expressions)} \\
+  \Gamma &\vdash s \dashv \Gamma &\text{(statments)} \\
+  \Gamma &\vdash p : t &\text{(programs)}
+\end{align*}
+The meta-variable $\Gamma$ stands for a typing context (a.k.a., static environment), which we will take to be a map from variables to types (i.e., a map of the form $\mathcal V \mapsto \mathcal T$). Note that statements do not have types, but they can affect the state of the context (i.e., they can have side-effects).  The following are the typing rules for \texttt{salt0}.
+
+
+\begin{center}
+  \AxiomC{$n \in \mathbb Z$}
+  \RightLabel{(int)}
+  \UnaryInfC{$\Gamma \vdash n : \code{i32}$}
+  \DisplayProof
+  \qquad
+  \AxiomC{}
+  \RightLabel{(unit)}
+  \UnaryInfC{$\etyj \Gamma \unitt \unitty$}
+  \DisplayProof
+  \qquad
+  \AxiomC{$(x \mapsto t) \in \Gamma$}
+  \RightLabel{(var)}
+  \UnaryInfC{$\etyj \Gamma x t$}
+  \DisplayProof
+\end{center}
+
+
+\begin{center}
+  \AxiomC{$\etyj \Gamma {e_1} \intty$}
+  \AxiomC{$\etyj \Gamma {e_2} \intty$}
+  \RightLabel{(add)}
+  \BinaryInfC{$\etyj \Gamma {\bop{\add}{e_1}{e_2}} \intty$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$x \not \in \mathsf{dom}(\Gamma)$}
+  \AxiomC{$\etyj \Gamma {e} t$}
+  \RightLabel{(let)}
+  \BinaryInfC{$\styj \Gamma {\lett x e} {\Gamma[x \mapsto t]}$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\Gamma_1 \vdash s \dashv \Gamma_2$}
+  \AxiomC{$\Gamma_2 \vdash p : t$}
+  \RightLabel{(prog)}
+  \BinaryInfC{$\Gamma_1 \vdash s \ \code{;} \ p : t$}
+\end{prooftree}
+
+\section{Evaluation}
+\newcommand{\config}[2]{\langle \ #1 \ , \ #2 \ \rangle}
+
+There are three kinds of (big-step) evaluation judgments:
+\begin{align*}
+  \config S e &\Downarrow v &\text{(expressions)} \\
+  \config S s &\Downarrow S &\text{(statements)} \\
+  \config S p &\Downarrow v &\text{(programs)}
+\end{align*}
+The meta-variable $S$ stands for a store (a.k.a., dynamic environment), which we will take to be a map from variables to values (i.e., a map of the form $\mathcal V \mapsto \mathsf{Val}$). Note that statements do not have values, but they can affect the state of the store.  The following are the evaluation rules for \texttt{salt0}.
+
+
+\begin{center}
+  \AxiomC{$n \in \mathbb Z$}
+  \RightLabel{(int)}
+  \UnaryInfC{$\config S n \Downarrow n$}
+  \DisplayProof
+  \qquad
+  \AxiomC{}
+  \RightLabel{(unit)}
+  \UnaryInfC{$\evj S \unitt \unitt$}
+  \DisplayProof
+  \qquad
+  \AxiomC{}
+  \RightLabel{(var)}
+  \UnaryInfC{$\evj S x {S(x)}$}
+  \DisplayProof
+\end{center}
+
+
+\begin{center}
+  \AxiomC{$\evj S {e_1} {v_1}$}
+  \AxiomC{$\evj S {e_2} {v_2}$}
+  \RightLabel{(add)}
+  \BinaryInfC{$\evj S {\bop{\add}{e_1}{e_2}} {v_1 + v_2}$}
+  \DisplayProof
+\end{center}
+
+
+\begin{center}
+  \AxiomC{$\evj S e v$}
+  \RightLabel{(let)}
+  \UnaryInfC{$\evj S {\lett x e} {S[x \mapsto v]}$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\evj {S_1} {s} {S_2}$}
+  \AxiomC{$\evj {S_2} p v$}
+  \RightLabel{(prog)}
+  \BinaryInfC{$\evj {S_1} {s \ \code{;} \ p} v$}
+  \DisplayProof
+\end{center}
+
+\section{Reduction}
+
+There are three kinds of reduction judgments:
+\begin{align*}
+  \config S e &\longrightarrow \config S e &\text{(expressions)} \\
+  \config S s &\longrightarrow \config S s &\text{(statements)} \\
+  \config S p &\longrightarrow \config S p &\text{(programs)}
+\end{align*}
+We will extend our syntax to include holes and to allow for evaluating
+statements:
+\begin{align*}
+  s &\cceq \lett x e \alt \bullet &\text{(statements)} \\
+  e\llbracket\ \ \rrbracket &\cceq \llbracket\ \ \rrbracket
+  \alt \bop {\add} {e\llbracket\ \ \rrbracket} {e}
+  \alt \bop {\add} {e} {e\llbracket\ \ \rrbracket} &\text{(holed expressions)} \\
+  s\llbracket\ \ \rrbracket &\cceq \lett x e\llbracket\ \ \rrbracket &\text{(holed statement)}\\
+  p\llbracket \ \ \rrbracket &\cceq \{ s\llbracket \ \ \rrbracket \ \code{;} \}
+  \alt \{ s \ \code{;} \} \ e\llbracket \ \ \rrbracket &\text{(holed programs)}
+\end{align*}
+The $\bullet$ statement is a placeholder for statements that have been
+fully evaluated.  The following are the reduction rules for
+\texttt{salt0}.
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(var)}
+  \UnaryInfC{$\evjss S x S {S(x)}$}
+\end{prooftree}
+
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(add)}
+  \UnaryInfC{$\evjss S {\bop{\add}{v_1}{v_2}} S {v_1 + v_2}$}
+\end{prooftree}
+
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(let)}
+  \UnaryInfC{$\evjss S {\lett x v} {S[x \mapsto v]} \bullet$}
+\end{prooftree}
+
+
+\begin{prooftree}
+  \AxiomC{$\evjss {S_1} {s_1} {S_2} {s_2}$}
+  \RightLabel{(prog$_1$)}
+  \UnaryInfC{$\evjss {S_1} {s_1 \ \code ; \ p} {S_2} {s_2 \ \code ; \ p}$}
+\end{prooftree}
+
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(prog$_2$)}
+  \UnaryInfC{$\evjss S {\bullet \ \code ; \ p} S {p} $}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\evjss {S_1} {e_1} {S_2} {e_2}$}
+  \RightLabel{\text{(hole)}}
+  \UnaryInfC{$\evjss {S_1} {\sigma\llbracket e_1 \rrbracket} {S_2} {\sigma\llbracket e_2 \rrbracket}$}
+\end{prooftree}
+
+\section{Meta-Theory}
+
+These first two theorems give a correspondence between the evaluation rules and the reduction rules.
+We will appeal to these theorems to justify using reduction rules to help use visualize the evaluation process.
+
+\begin{theorem}
+  (Operational Adequacy)
+  For any store $S$, program $p$, and value $v$, if $\evj S p v$, then there is store $S'$ such that $\evjssm S p {S'} v$.
+\end{theorem}
+
+\begin{theorem}
+  (Operational Soundness)
+  For any stores $S$ and $S'$, program $p$, and value $v$, if $\evjssm S p {S'} v$ then $\evj S p v$.
+\end{theorem}
+
+The central meta-theoretic result we'll be interested in is soundness, i.e., every well-typed program terminates and evaluates to a value with the same type as the program.
+
+\begin{definition}
+  The types of values are given as:
+  \begin{align*}
+    \mathcal T(n) &= \code{i32} \\
+    \mathcal T(\code{()}) &= \code{()}
+  \end{align*}
+\end{definition}
+
+\begin{definition}
+  For any context $\Gamma$ and store $S$, we write $\Gamma \sim S$ to mean that $\mathsf{dom}(\Gamma) = \mathsf{dom}(S)$ and  $\mathcal T(S(x)) = \Gamma(x)$ for all variables $x \in \mathsf{dom}(\Gamma)$.
+\end{definition}
+
+%% \begin{theorem}
+%%   (Progress)
+%%   Let $\Gamma$ be a context and $S$ a store such that $\Gamma \sim S$.
+%%   For any program $p$ and type $t$, if $\etyj \Gamma p t$ then there is a store $S'$ and program $p'$ such that $\evjss S p {S'} {p'}$.
+%% \end{theorem}
+
+%% \begin{theorem}
+%%   (Preservation)
+%%   Let $\Gamma$ be a context and $S$ a store such that $\Gamma \sim S$.
+%%   For any store $S'$, programs $p$ and $p'$, and type $t$, if $\etyj \Gamma p t$ and $\evjss S p {S'} {p'}$ then $\etyj {\Gamma'} {p'} t$ for any context $\Gamma'$ where $\Gamma' \sim S'$.
+%% \end{theorem}
+
+%% \begin{theorem}
+%%   (Normalization)
+%%   Let $\Gamma$ be a context and $S$ a store such that $\Gamma \sim S$.
+%%   For any type $t$, if $\etyj \Gamma p t$ then there is a store $S'$ and value $v$ such that $\evjssm S p {S'} v$.
+%% \end{theorem}
+
+\begin{theorem}
+  (Type Soundness)
+  Let $\Gamma$ is a context and let $S$ be a store such that $\Gamma \sim S$.
+  For any program $p$ and type $t$, if $\etyj \Gamma p t$ then there is a value $v$ such that $\evj S p v$ and $\mathcal T(v) = t$.
+\end{theorem}
+
+\begin{proof}
+  We first prove soundness for expressions by induction on derivations.
+  \begin{itemize}
+  \item (int) Given $\Gamma \vdash n : \code{i32}$ take $v$ to be $n$.
+  \item (unit) Given $\Gamma \vdash \code{()} : \code{()}$ take $v$ to be $\code{()}$.
+  \item (var) Given $\Gamma \vdash x : t$ with $(x \mapsto t) \in \Gamma$, take $v$ to be $S(x)$.
+  \item (add) Suppose $\Gamma \vdash e_1 \ \code{+} \ e_2 : \code{i32}$
+    where $\Gamma \vdash e_1 : \code{i32}$ and $\Gamma \vdash e_2 :
+    \code{i32}$. By the IH, there are values $v_1$ and $v_2$ such that
+    $\config S {e_1} \Downarrow v_1$ and $\config S {e_2} \Downarrow
+    v_2$. By the (add) evaluation rule, we have that $\config S {e_1 \ \code{+} \ e_2} \Downarrow {v_1 + v_2}$, where $\mathcal T(v_1 + v_2) = \code{i32}$.
+  \end{itemize}
+  We then prove soundness for programs by simultaneous induction on derivations and number of statements in the program.
+  \begin{itemize}
+  \item If $p$ has no statements, then it is a single expression, and soundness follows from soundness for expressions.
+  \item Otherwise, suppose that $\Gamma_1 \vdash s \ \code ; \ p : t$ where $\Gamma_1 \vdash s \dashv \Gamma_2$ and $\Gamma_2 \vdash p : t$.
+    Since there is only one form of statement, we know that $s$ is of the form $\code{let} \ x \ \code = \ e$ and $\Gamma_2$ is of the form $\Gamma_1[x \mapsto t]$.
+    Furthermore, there is a type $t'$ such that $\Gamma \vdash e : t'$ and a value $v'$ such that $\config S e \Downarrow v'$ and $\mathcal T(v') = t'$ (by soundness for expressions).
+    It suffices to note that $\Gamma[x \mapsto t'] \sim S[x \mapsto v']$ so that we can apply the IH to $\Gamma_1[x \mapsto t'] \vdash p : t$ and get a value $v$ such that $\config {S[x \mapsto v']} p \Downarrow v$ and $\mathcal T(v) = t$.
+    Note that $x \not \in \mathsf{dom}(\Gamma)$ by the (let) typing rule, so the $\Gamma[x \mapsto t'] \sim S[x \mapsto v]$ follows from $\Gamma \sim S$ and $\mathcal T(S[x \mapsto v](x)) = \mathcal T(v) = t' = \Gamma[x \mapsto t'](x)$.
+    We can then use the (let) and (prog) evaluation rules to derive that $\config S {s \ \code ; \ p} \Downarrow v$.
+  \end{itemize}
+\end{proof}
+
+\end{document}
