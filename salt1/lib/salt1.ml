@@ -13,7 +13,7 @@ module Errors = struct
         pp_type t1 pp_type t2
     in Error_msg.mk pos msg
 
-  let unknown_var x pos =
+  let unknown_var pos x =
     Error_msg.mk pos (Format.asprintf "unknown variable `%s`" x)
 
   let cannot_deref pos ty =
@@ -31,6 +31,7 @@ module Errors = struct
 
   let missing_main = Error_msg.mk dummy_pos "`main` function found"
 end
+include Errors
 
 type slot =
   {
@@ -49,9 +50,22 @@ type store = value Map.t
 
 (* let ty_stmt (_ctxt : context) (_stmt : pos stmt) : (context, Error_msg.t) result = assert false *)
 
-(* let ty_stmts (_ctxt : context) (_stmts : pos stmts) : (ty * context, Error_msg.t) result = assert false *)
+let ty_stmts (_ctxt : context) (_stmts : pos stmts) : (ty * context, Error_msg.t) result = assert false
 
-let ty (_ctxt : context) (_prog : pos prog) : (ty * context, Error_msg.t) result = assert false
+let ty (ctxt : context) (prog : pos prog) : (ty * context, Error_msg.t) result =
+  let* stmts =
+    match prog with
+    | [] -> Error missing_main
+    | [f] ->
+      if f.name = "main"
+      then Ok f.body
+      else Error missing_main
+    | fs ->
+      match List.find_opt (fun f -> f.name <> "main") fs with
+      | None -> Error missing_main
+      | Some f -> Error (not_implemented f.meta)
+  in
+  ty_stmts ctxt stmts
 
 (* let rec loc (_store : store) (_w : place_expr) : ident = assert false *)
 
@@ -61,9 +75,13 @@ let ty (_ctxt : context) (_prog : pos prog) : (ty * context, Error_msg.t) result
 
 (* let eval_stmt (_store : store) (_stmt : pos stmt) : store = assert false *)
 
-(* let eval_stmts (_store : store) (_stmts : pos stmts) : store * value = assert false *)
+let eval_stmts (_store : store) (_stmts : pos stmts) : store * value = assert false
 
-let eval (_store : store) (_prog : pos prog) : store * value = assert false
+let eval (store : store) (prog : pos prog) : store * value =
+  match prog with
+  | [f] when f.name = "main" ->
+    eval_stmts store f.body
+  | _ -> assert false
 
 let interp ~filename =
   let _ = Printf.printf "parsing...\n" in
