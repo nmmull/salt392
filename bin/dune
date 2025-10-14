@@ -1,0 +1,4 @@
+(executable
+ (public_name salt)
+ (name main)
+ (libraries salt))

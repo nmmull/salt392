@@ -1,0 +1,6 @@
+(library
+ (libraries
+  parse
+  error_msg
+  utils)
+ (name salt0))

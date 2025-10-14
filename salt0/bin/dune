@@ -1,4 +1,0 @@
-(executable
- (public_name salt0)
- (name main)
- (libraries salt0))

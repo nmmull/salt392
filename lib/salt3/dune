@@ -1,0 +1,7 @@
+(library
+ (libraries
+  fmt
+  parse
+  error_msg
+  utils)
+ (name salt3))

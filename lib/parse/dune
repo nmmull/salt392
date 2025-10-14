@@ -1,0 +1,16 @@
+
+(library
+ (libraries menhirLib error_msg)
+ (name parse))
+
+(ocamllex lexer)
+
+(menhir
+ (modules parser)
+ (flags --table))
+
+(rule
+ (action (with-stdout-to syntaxError.ml
+  (run menhir
+   %{dep:parser.mly}
+   --compile-errors %{dep:syntaxError.messages}))))

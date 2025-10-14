@@ -1,0 +1,164 @@
+\documentclass{report}
+\usepackage{mathpazo}
+\usepackage{amsthm, mathtools, stmaryrd}
+\usepackage{todonotes} %% has coloring?
+\usepackage{bussproofs}
+\pagenumbering{gobble}
+\input{../../../macros.tex}
+\title{\texttt{salt0}: Straight Line Programs}
+\author{\texttt{CS392-M1}: \textit{Rust, In Practice and in Theory}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\chapter*{Syntax}
+
+\begin{align*}
+  x
+  &
+  &\text{(variables, $\V$)} \\
+  n
+  &
+  &\text{(integers, $\Z$)} \\
+  e
+  &\cceq
+  \unitt
+  \alt n
+  \alt x
+  \alt e \plus e
+  &\text{(expressions, $\E$)} \\
+  s
+  &\cceq
+  \lete x \eqe e
+  &\text{(statements, $\mathcal S$)} \\
+  p
+  &\cceq
+  e
+  \alt s \semi p
+  &\text{(programs, $\cP$)}
+\end{align*}
+
+\chapter*{Typing}
+
+\begin{align*}
+  t
+  &\cceq
+  \unitty
+  \alt \intty
+  &\text{(types, $\T$)} \\
+  \\
+  \G &\in \V \mapsto \T & \text{(contexts)}\\
+  \\
+  \G &\ent e : t &\text{(expressions)} \\
+  \G &\ent s \dashv \G &\text{(statments)} \\
+  \G &\ent p : t &\text{(programs)}
+\end{align*}
+\bigskip
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(unit)}
+  \UnaryInfC{$\G \ent \unt : \unt$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$n \in \mathbb Z$}
+  \RightLabel{(int)}
+  \UnaryInfC{$\G \ent n : \intt$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$(x \mapsto t) \in \G$}
+  \RightLabel{(var)}
+  \UnaryInfC{$\G \ent x : t$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G \ent e_1 : \intt$}
+  \AxiomC{$\G \ent e_2 : \intt$}
+  \RightLabel{(add)}
+  \BinaryInfC{$\G \ent e_1 \plus e_2 : \intt$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$x \not \in \mathsf{dom}(\G)$}
+  \AxiomC{$\G \ent e : t$}
+  \RightLabel{(let)}
+  \BinaryInfC{$\G \ent \lete x \eqe e \tne \G[x \mapsto t]$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\G_1 \ent s \dashv \G_2$}
+  \AxiomC{$\G_2 \ent p : t$}
+  \RightLabel{(prog)}
+  \BinaryInfC{$\G_1 \ent s \ \code{;} \ p : t$}
+\end{prooftree}
+
+\chapter*{Evaluation}
+
+\newcommand{\config}[2]{\langle \ #1 \ , \ #2 \ \rangle}
+
+\begin{align*}
+  v
+  &\cceq \unitt \alt n
+  &\text{(values, $\Val$)} \\
+  \\
+  S &\in \V \mapsto \Val &\text{(store)} \\
+  \\
+  \config S e &\Downarrow v &\text{(expressions)} \\
+  \config S s &\Downarrow S &\text{(statements)} \\
+  \config S p &\Downarrow v &\text{(programs)}
+\end{align*}
+\bigskip
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(unit)}
+  \UnaryInfC{$\evj S \unitt \unitt$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$n \in \mathbb Z$}
+  \RightLabel{(int)}
+  \UnaryInfC{$\config S n \Downarrow n$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(var)}
+  \UnaryInfC{$\evj S x {S(x)}$}
+  \DisplayProof
+\end{center}
+
+
+\begin{center}
+  \AxiomC{$\evj S {e_1} {v_1}$}
+  \AxiomC{$\evj S {e_2} {v_2}$}
+  \RightLabel{(add)}
+  \BinaryInfC{$\evj S {\bop{\add}{e_1}{e_2}} {v_1 + v_2}$}
+  \DisplayProof
+\end{center}
+
+
+\begin{center}
+  \AxiomC{$\evj S e v$}
+  \RightLabel{(let)}
+  \UnaryInfC{$\evj S {\lett x e} {S[x \mapsto v]}$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\evj {S_1} {s} {S_2}$}
+  \AxiomC{$\evj {S_2} p v$}
+  \RightLabel{(prog)}
+  \BinaryInfC{$\evj {S_1} {s \ \code{;} \ p} v$}
+  \DisplayProof
+\end{center}
+\end{document}

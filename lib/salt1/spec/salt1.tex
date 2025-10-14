@@ -1,0 +1,281 @@
+\documentclass{report}
+\usepackage{mathpazo}
+\usepackage{amsthm, amssymb, mathtools, stmaryrd}
+\usepackage{todonotes} %% has coloring?
+\usepackage{bussproofs}
+\pagenumbering{gobble}
+\input{../../../macros.tex}
+\title{\texttt{salt1}: Immutable References}
+\author{\texttt{CS392-M1}: \textit{Rust, In Practice and in Theory}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\chapter*{Syntax}
+
+\begin{align*}
+  x
+  &
+  &\text{(variables, $\V$)} \\
+  n
+  &
+  &\text{(integers, $\Z$)} \\
+  w &\cceq x \alt \dref w &\text{(place expression, $\mathcal W$)} \\
+  e
+  &\cceq
+  \unitt
+  \alt n
+  \alt w
+  \alt \brw x
+  \alt x \eqe e
+  &\text{(expressions, $\E$)} \\
+  s
+  &\cceq
+  \lete x \eqe e
+  \alt \lete \mute x \eqe e
+  \alt e
+  &\text{(statements, $\mathcal S$)} \\
+  p
+  &\cceq
+  e
+  \alt s \semi p
+  &\text{(programs, $\cP$)}
+\end{align*}
+
+\chapter*{Typing}
+
+\begin{align*}
+  t
+  &\cceq
+  \unitty
+  \alt \intty
+  \alt \brw x
+  &\text{(types, $\T$)} \\
+  m &\cceq \mathsf{imm} \alt \mathsf{mut} &\text{(mutability)} \\
+  u &\cceq \langle t \rangle^m &\text{(slot types, $\mathbb S_{\T}$)}\\
+  \\
+  \G &\in \V \mapsto \mathbb S_\T & \text{(contexts)}\\
+  \\
+  \G &\ent w : u & \text{(place expressions)} \\
+  \G &\ent \mathsf{writable}(x) &\text{(writability)} \\
+  \G &\ent t \approx t &\text{(type compatibility)} \\
+  \G &\ent e : t \tne \G &\text{(expressions)} \\
+  \G &\ent s \tne \G &\text{(statments)} \\
+  \G &\ent p : t \tne \G &\text{(programs)}
+\end{align*}
+\bigskip
+
+\begin{center}
+  \AxiomC{$(x \mapsto t^m) \in \G$}
+  \RightLabel{(var)}
+  \UnaryInfC{$\G \ent x : \langle t \rangle^m$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G \ent w : \langle \brw x \rangle^{m_1}$}
+  \AxiomC{$\G \ent x : \langle t \rangle^{m_2}$}
+  \RightLabel{(deref)}
+  \BinaryInfC{$\G \ent \dref w : \langle t \rangle^{m_2}$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(unit)}
+  \UnaryInfC{$\G \ent \unt : \unt \tne \G$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$n \in \mathbb Z$}
+  \RightLabel{(int)}
+  \UnaryInfC{$\G \ent n : \intt \tne \G$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G \ent w : \langle t \rangle ^m$}
+  \RightLabel{(place)}
+  \UnaryInfC{$\G \ent w : t \tne \G$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G \ent x : \langle t \rangle^m$}
+  \RightLabel{(ref-var)}
+  \UnaryInfC{$\G \ent \brw x : \brw x \tne \Gamma$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G \ent w : \langle \brw x \rangle^m$}
+  \RightLabel{(ref-drf)}
+  \UnaryInfC{$\G \ent \brw \dref w : \brw x \tne \Gamma$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{($\approx$-unit)}
+  \UnaryInfC{$\Gamma \vdash \unitty \approx \unitty$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{($\approx$-int)}
+  \UnaryInfC{$\Gamma \vdash \intty \approx \intty$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G \ent x_1 : \langle t_1 \rangle^m$}
+  \AxiomC{$\G \ent x_2 : \langle t_2 \rangle^m$}
+  \AxiomC{$\G \ent t_1 \approx t_2$}
+  \RightLabel{($\approx$-ref)}
+  \TrinaryInfC{$\G \ent \brw x_1 \approx \brw x_2$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$\nexists y . (y \mapsto \brw x) \in \Gamma$}
+  \RightLabel{(writable)}
+  \UnaryInfC{$\writable \Gamma x$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\G_1 \ent x : \langle t_1 \rangle^{\mathsf{mut}}$}
+  \AxiomC{$\G_1 \ent e : t_2 \tne \G_2$}
+  \AxiomC{$\G_2 \ent t_1 \approx t_2$}
+  \AxiomC{$\writable {\G_2} x$}
+  \RightLabel{(assign)}
+  \QuaternaryInfC{$\G_1 \ent x \eqe e : \unitt \tne \G_2[x \mapsto t_2^{\mathsf{mut}}]$}
+\end{prooftree}
+
+\begin{center}
+  \AxiomC{$\G_1 \ent e : t \tne \G_2$}
+  \AxiomC{$x \not \in \mathsf{dom}(\G_2)$}
+  \RightLabel{(let)}
+  \BinaryInfC{$\G_1 \ent \lete x \eqe e \tne \G_2[x \mapsto t^{\mathsf{imm}}]$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G_1 \ent e : t \tne \G_2$}
+  \AxiomC{$x \not \in \mathsf{dom}(\G_2)$}
+  \RightLabel{(let-mut)}
+  \BinaryInfC{$\G_1 \ent \lete \mute x \eqe e \tne \G_2[x \mapsto t^{\mathsf{mut}}]$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G_1 \ent e : t \tne \G_2$}
+  \RightLabel{(expr-stmt)}
+  \UnaryInfC{$\G_1 \ent e \tne \G_2$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$\G_1 \ent s \tne \G_2$}
+  \AxiomC{$\G_2 \ent p : t \tne \G_3$}
+  \RightLabel{(prog)}
+  \BinaryInfC{$\G_1 \ent s \ \code{;} \ p : t \tne \G_3$}
+\end{prooftree}
+
+\chapter*{Evaluation}
+
+\newcommand{\config}[2]{\langle \ #1 \ , \ #2 \ \rangle}
+
+\begin{align*}
+  \ell &\cceq \ell_x &\text{(locations, $\mathcal L$)} \\
+  v
+  &\cceq \unitt \alt n \alt \ell
+  &\text{(values, $\Val$)} \\
+  \\
+  S &\in \Loc \mapsto \Val &\text{(store)} \\
+  \\
+  w &\rightsquigarrow \ell &\text{(place locations)} \\
+  \config S e &\Downarrow \config S v &\text{(expressions)} \\
+  \config S s &\Downarrow S &\text{(statements)} \\
+  \config S p &\Downarrow \config S v &\text{(programs)}
+\end{align*}
+\bigskip
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(loc-var)}
+  \UnaryInfC{$x \rightsquigarrow \ell_x$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$w \rightsquigarrow \ell_x$}
+  \AxiomC{$(\ell_x \mapsto \ell_y) \in S$}
+  \RightLabel{(loc-drf)}
+  \BinaryInfC{$\dref w \rightsquigarrow \ell_y$}
+\end{prooftree}
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(unit)}
+  \UnaryInfC{$\config S \unitt \evl \config S \unitt$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$n \in \mathbb Z$}
+  \RightLabel{(int)}
+  \UnaryInfC{$\config S n \evl \config S n$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$w \rightsquigarrow \ell_x$}
+  \AxiomC{$(\ell_x \mapsto v) \in S$}
+  \RightLabel{(place)}
+  \BinaryInfC{$\config S w \evl \config S {v}$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$w \rightsquigarrow \ell_x$}
+  \RightLabel{(ref)}
+  \UnaryInfC{$\config S {\brw w} \evl \config S {\ell_x}$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
+  \RightLabel{(assign)}
+  \UnaryInfC{$\config {S_1} {x \eqe e} \evl \config {S_2[x \mapsto v]} {\unitt}$}
+\end{prooftree}
+
+\begin{center}
+  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
+  \RightLabel{(let)}
+  \UnaryInfC{$\config {S_1} {\lett x e} \evl S_2[x \mapsto v]$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
+  \RightLabel{(let-mut)}
+  \UnaryInfC{$\config {S_1} {\lete \mute x \eqe e} \evl S_2[x \mapsto v]$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
+  \RightLabel{(expr-stmt)}
+  \UnaryInfC{$\config {S_1} {e} \evl S_2$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\config {S_1} {s} \evl S_2$}
+  \AxiomC{$\config {S_2} p \evl \config {S_3} v$}
+  \RightLabel{(prog)}
+  \BinaryInfC{$\config {S_1} {s \ \code{;} \ p} \evl \config {S_3} v$}
+  \DisplayProof
+\end{center}
+\end{document}

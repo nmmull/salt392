@@ -1,0 +1,83 @@
+
+\newcommand{\code}[1]{\textcolor{purple}{\textnormal{\texttt{#1}}}}
+
+\newcommand{\E}{\mathcal E}
+\newcommand{\V}{\mathcal V}
+\newcommand{\Val}{\mathbb V}
+\newcommand{\W}{\mathcal W}
+\newcommand{\Loc}{\mathcal L}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\N}{\mathbb N}
+\newcommand{\B}{\mathbb B}
+\newcommand{\cP}{\mathcal P}
+
+\newcommand{\rep}[1]{\{#1\}}
+\newcommand{\opt}[1]{[#1]}
+
+\newcommand{\boxe}[1]{\code{box} \ #1}
+\newcommand{\boxty}[1]{\code{$\square$} \ #1}
+
+\newcommand{\bop}[3]{#2 \ #1 \ #3}
+\newcommand{\uop}[2]{#1 \ #2}
+\newcommand{\add}{\code{+}}
+\newcommand{\sub}{\code{-}}
+\newcommand{\mul}{\code{*}}
+\newcommand{\divv}{\code{/}}
+\newcommand{\modd}{\code{\%}}
+\newcommand{\andd}{\code{\&\&}}
+\newcommand{\orr}{\code{||}}
+\newcommand{\asgn}{\code{=}}
+\newcommand{\nott}{\code{!}}
+\newcommand{\unitt}{\code{()}}
+\newcommand{\tru}{\code{true}}
+\newcommand{\fls}{\code{false}}
+
+\newcommand{\lett}[2]{\code{let} \ #1 \ \code{=} \ #2}
+\newcommand{\letmut}[2]{\code{let} \ #1 \ \code{=} \ #2}
+
+\newcommand{\intty}{\code{i32}}
+\newcommand{\boolty}{\code{bool}}
+\newcommand{\unitty}{\code{()}}
+
+\newcommand{\alt}{\ | \ }
+\newcommand{\cceq}{\Coloneqq}
+
+\newcommand{\etyj}[3]{#1 \vdash #2 : #3}
+\newcommand{\styj}[3]{#1 \vdash #2 \dashv #3}
+
+\newcommand{\evj}[3]{\langle \ #1 \ , \ #2 \ \rangle \Downarrow #3}
+\newcommand{\evjss}[4]{\langle \ #1 \ , \ #2 \ \rangle \longrightarrow \langle \ #3 \ , \ #4 \ \rangle}
+\newcommand{\evjssm}[4]{\langle \ #1 \ , \ #2 \ \rangle \longrightarrow^\star \langle \ #3 \ , \ #4 \ \rangle}
+
+\newtheorem*{definition}{Definition}
+\newtheorem*{theorem}{Theorem}
+
+\newcommand{\ent}{\vdash}
+\newcommand{\tne}{\dashv}
+\newcommand{\G}{\Gamma}
+\newcommand{\mvty}[1]{\lfloor #1 \rfloor}
+\newcommand{\T}{\mathcal T}
+\newcommand{\St}{\mathcal S}
+\newcommand{\brw}[1]{\code{\&} \ #1}
+\newcommand{\mbrw}[1]{\code{\&mut} \ #1}
+\newcommand{\dref}[1]{\code{*} \ #1}
+\newcommand{\copyy}[1]{\mathsf{copy}(#1)}
+\newcommand{\move}[2]{\mathsf{move}(#1, #2)}
+\newcommand{\readable}[2]{#1 \ent \mathsf{readable}(#2)}
+\newcommand{\writable}[2]{#1 \ent \mathsf{writable}(#2)}
+\newcommand{\strike}[2]{\mathsf{strike}(#1, #2)}
+\newcommand{\intt}{\code{i32}}
+\newcommand{\drefe}{\code{*}}
+\newcommand{\boxx}{\code{$\square$}}
+
+\newcommand{\plus}{\ \code{+} \ }
+\newcommand{\lete}{\code{let} \ }
+\newcommand{\eqe}{\ \code{=} \ }
+\newcommand{\semi}{\ \code{;} \ }
+\newcommand{\unt}{\code{()}}
+\newcommand{\mute}{\code{mut} \ }
+\newcommand{\evl}{\Downarrow}
+\newcommand{\loc}[2]{\mathsf{loc}(#1, #2)}
+\newcommand{\mutable}[2]{#1 \ent \mathsf{mutable}(#2)}
+\newcommand{\writee}{\mathsf{write}}
+\newcommand{\readd}{\mathsf{read}}
