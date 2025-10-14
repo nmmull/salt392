@@ -5,3 +5,5 @@ _build
 *.fls
 *.log
 .DS_Store
+target
+*.lock
