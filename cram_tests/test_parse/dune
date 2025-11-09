@@ -1,0 +1,5 @@
+(executables
+ (names parse_test)
+ (libraries salt))
+
+(cram (deps parse_test.exe))

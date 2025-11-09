@@ -2,15 +2,21 @@
 
 fn main() {
     let mut x = 2;
-    let mut y = &mut x;
-    let mut z = &mut y;
-    let mut a = &*z;
-    let mut x_ = 3;
-    let mut y_ = &mut x_;
-    z = &mut y_;
-    let mut x__ = 4;
-    y = &mut x__;
-    let b = **a;
+    let x2 = 3;
+    let mut y = &x;
+    let z = &*y;
+    y = &x2;
+    x = 3;
+    // let mut x = 2;
+    // let mut y = &mut x;
+    // let mut z = &mut y;
+    // let mut a = &*z;
+    // let mut x_ = 3;
+    // let mut y_ = &mut x_;
+    // z = &mut y_;
+    // let mut x__ = 4;
+    // y = &mut x__;
+    // let b = **a;
 
     // let mut x = 1;
     // let mut y = &x;
