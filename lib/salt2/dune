@@ -1,7 +1,7 @@
 (library
  (libraries
   fmt
-  parse
+  main_parser
   error_msg
   utils)
  (name salt2))

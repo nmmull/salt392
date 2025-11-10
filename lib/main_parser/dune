@@ -1,7 +1,7 @@
 
 (library
  (libraries menhirLib error_msg)
- (name parse))
+ (name main_parser))
 
 (ocamllex lexer)
 

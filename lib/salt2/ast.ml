@@ -2,9 +2,9 @@ open Utils
 
 type ident = string
 
-type mut = Parse.Ast.mut = Mutable | Immutable
+type mut = Main_parser.Ast.mut = Mutable | Immutable
 
-type place_expr = Parse.Ast.place_expr =
+type place_expr = Main_parser.Ast.place_expr =
   | Var of ident
   | Deref of place_expr
 
@@ -14,10 +14,12 @@ let rec pp_place_expr ppf =
   | Var x -> fprintf ppf "%s" x
   | Deref w -> fprintf ppf "*%a" pp_place_expr w
 
+type copyable = bool
+
 type _expr =
   | Unit
   | Int32 of int32
-  | Place_expr of place_expr
+  | Place_expr of copyable ref * place_expr
   | Borrow of mut * place_expr
   | Assign of expr * expr
 and expr = { expr : _expr ; pos : pos }

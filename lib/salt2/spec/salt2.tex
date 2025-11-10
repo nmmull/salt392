@@ -30,6 +30,7 @@
   \alt w
   \alt \brw w
   \alt \mbrw w
+  \alt \copye w
   \alt w \eqe e
   &\text{(expressions, $\E$)} \\
   s
@@ -61,10 +62,13 @@
   \alt t
   &\text{(partial types, $\tilde \T$)} \\
   m &\cceq \mathsf{imm} \alt \mathsf{mut} &\text{(mutability)} \\
+  u &\cceq \langle \tilde t \rangle^m &\text{(slot types, $\mathbb S_{\T}$)}\\
   \\
-  \G &\in \V \mapsto \T \times \{\mathsf{imm}, \mathsf{mut}\} & \text{(contexts)}\\
+  \G &\in \V \mapsto \mathbb S_\T & \text{(contexts)}\\
   \\
-  \G &\ent w : \tilde t^m & \text{(place expressions)} \\
+  &\mathsf{copyable}(t) & \text{(copyability)} \\
+  \G &\ent w : u & \text{(place expressions)} \\
+  \G &\ent \mathsf{readable}(w) &\text{(readability)} \\
   \G &\ent \mathsf{writable}(w) &\text{(writability)} \\
   \G &\ent \tilde t \approx \tilde t &\text{(type compatibility)} \\
   \G &\ent e : t \tne \G &\text{(expressions)} \\
@@ -72,20 +76,10 @@
   \G &\ent p : t \tne \G &\text{(programs)}
 \end{align*}
 
-\begin{align*}
-  \mathsf{copy}(t) \equiv \nexists w . t = \mbrw w
-\end{align*}
-
-\begin{align*}
-  \writee(\G, x, t) &= \G[x \mapsto t] \\
-  \writee(\G, \code*^{k + 1}x, t) &= \writee(\G, \code*^k w, t) \quad \text{where } (x \mapsto \mbrw w^m) \in \G
-\end{align*}
-\bigskip
-
 \begin{center}
-  \AxiomC{$(x \mapsto t^m) \in \G$}
+  \AxiomC{$(x \mapsto \langle \tilde t \rangle^m) \in \G$}
   \RightLabel{(var)}
-  \UnaryInfC{$\G \ent x : t^m$}
+  \UnaryInfC{$\G \ent x : \langle \tilde t \rangle^m$}
   \DisplayProof
 \end{center}
 
@@ -96,6 +90,7 @@
   \BinaryInfC{$\G \ent \dref w_1 : t^{m_2}$}
   \DisplayProof
 \end{center}
+
 
 \begin{center}
   \AxiomC{}
@@ -112,28 +107,50 @@
 \end{center}
 
 \begin{prooftree}
-  \AxiomC{$\nexists y . (y \mapsto \mbrw \code *^l x) \in \Gamma$}
+  \AxiomC{$\nexists y,l . (y \mapsto \mbrw \code *^l x) \in \Gamma$}
   \RightLabel{(readable)}
   \UnaryInfC{$\readable \Gamma {\code *^k x}$}
 \end{prooftree}
 
-\begin{prooftree}
-  \AxiomC{$\nexists y . (y \mapsto \brw \code *^l x) \in \Gamma \land \nexists y. (y \mapsto \mbrw \code *^l x) \in \Gamma$}
-  \RightLabel{(writable)}
-  \UnaryInfC{$\writable \Gamma {\code *^k x}$}
-\end{prooftree}
-
 \begin{center}
-  \AxiomC{$\G \ent w : t^m$}
-  \AxiomC{$\mathsf{copy}(t)$}
-  \AxiomC{$\readable \G w$}
-  \RightLabel{(place-copy)}
-  \TrinaryInfC{$\G \ent w : t \tne \G$}
+  \AxiomC{}
+  \RightLabel{(copy-unit)}
+  \UnaryInfC{$\mathsf{copyable}(\unitt)$}
   \DisplayProof
 \end{center}
 
 \begin{center}
-  \AxiomC{$\G \ent x : \mbrw w^m$}
+  \AxiomC{}
+  \RightLabel{(copy-int)}
+  \UnaryInfC{$\mathsf{copyable}(\intt)$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{}
+  \RightLabel{(copy-brw)}
+  \UnaryInfC{$\mathsf{copyable}(\brw w)$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\G \ent w : \langle t \rangle^m$}
+  \AxiomC{$\readable \G w$}
+  \AxiomC{$\mathsf{copyable}(t)$}
+  \RightLabel{(place-copy)}
+  \TrinaryInfC{$\G \ent \copye w : t \tne \G$}
+  \DisplayProof
+\end{center}
+
+\begin{prooftree}
+  \AxiomC{$\readable \Gamma {\code *^k x}$}
+  \AxiomC{$\nexists y,l . (y \mapsto \brw \code *^l x) \in \Gamma$}
+  \RightLabel{(writable)}
+  \BinaryInfC{$\writable \Gamma {\code *^k x}$}
+\end{prooftree}
+
+\begin{center}
+  \AxiomC{$\G \ent x : \langle \mbrw w \rangle^m$}
   \AxiomC{$\writable \G x$}
   \RightLabel{(place-move)}
   \BinaryInfC{$\G \ent x : \mbrw w \tne \Gamma[x \mapsto \mvty {\mbrw w}]$}
@@ -141,44 +158,15 @@
 \end{center}
 
 \begin{center}
-  \AxiomC{$\G \ent x : t^m$}
-  \RightLabel{(brw-var)}
-  \UnaryInfC{$\G \ent \brw x : \brw x \tne \Gamma$}
+  \AxiomC{$\G \ent w : \langle t \rangle^m$}
+  \AxiomC{$\readable \G {w}$}
+  \RightLabel{(brw)}
+  \BinaryInfC{$\G \ent \brw w : \brw w \tne \Gamma$}
   \DisplayProof
 \end{center}
 
 \begin{center}
-  \AxiomC{$\G \ent w_1 : \brw w_2^m$}
-  \AxiomC{$\readable \G {w_1}$}
-  \RightLabel{(brw-drf)}
-  \BinaryInfC{$\G \ent \brw \dref w_1 : \brw {w_2} \tne \Gamma$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent w_1 : \mbrw w_2^m$}
-  \AxiomC{$\readable \G {w_1}$}
-  \RightLabel{(brw-drf-mut)}
-  \BinaryInfC{$\G \ent \brw \dref w_1 : \brw {\dref w_1} \tne \Gamma$}
-  \DisplayProof
-\end{center}
-
-\begin{prooftree}
-  \AxiomC{$(x \mapsto t^{\mathsf{mut}}) \in \G$}
-  \RightLabel{(mut-var)}
-  \UnaryInfC{$\mutable \G x$}
-\end{prooftree}
-
-\begin{prooftree}
-  \AxiomC{$\G \ent {w_1} : \mbrw w_2^m$}
-  \AxiomC{$\mutable \G {\code *^k w_2}$}
-  \RightLabel{(mut-deref)}
-  \BinaryInfC{$\mutable \G {\code*^{k + 1} w_1}$}
-\end{prooftree}
-
-
-\begin{center}
-  \AxiomC{$\G \ent w : t^{\mathsf{mut}}$}
+  \AxiomC{$\G \ent w : \langle t \rangle ^{\mathsf{mut}}$}
   \AxiomC{$\writable \G {w}$}
   \AxiomC{$\mutable \G w$}
   \RightLabel{(mut-brw)}
@@ -232,12 +220,29 @@
   \DisplayProof
 \end{center}
 
+\begin{align*}
+  \writee(\G, x, t) &= \G[x \mapsto t] \\
+  \writee(\G, \code*^{k + 1}x, t) &= \writee(\G, \code*^k w, t) \quad \text{where} \quad (x \mapsto \mbrw w^m) \in \G \\
+\end{align*}
+\begin{align*}
+  \mathsf{replace}(\code{\&}\code{*}^{k + 1}w_1 , w_1, \code{\&}[\code{mut}] w_2) &= \code{\&}\code{*}^k w_2 \\
+  \mathsf{replace}(\code{\&}\code{mut} \ \code{*}^{k + 1}w_1 , w_1, \code{\&}[\code{mut}] w_2) &= \code{\&}\code{mut} \ \code{*}^k w_2 \\
+  \mathsf{replace}(t_1, w, t_2) &= t_1 \\
+  \mathsf{replace}(\mvty {t_1} , w, t_2) &= \mvty {\mathsf{replace}(t_1, w, t_2)} \\
+  \mathsf{replace}(\G, w, t_2) &= \{ x \mapsto \mathsf{replace}(\tilde t_1, w, t_2) : (x \mapsto \tilde t_1) \in \G \}
+\end{align*}
+
+\begin{align*}
+  \mathsf{update}(\G, w, t_2) = \mathsf{replace}(\writee(\G, w, t_2), w, t_2)
+\end{align*}
+
+
 \begin{prooftree}
-  \AxiomC{$\G_1 \ent w : \tilde t_1^{\mathsf{mut}}$}
+  \AxiomC{$\G_1 \ent w : \langle \tilde t_1 \rangle^{\mathsf{mut}}$}
   \AxiomC{$\G_1 \ent e : t_2 \tne \G_2$}
   \AxiomC{$\G_2 \ent \tilde t_1 \approx t_2$}
-  \AxiomC{$\G_3 = \writee(\G, w, t_2)$}
-  \AxiomC{$\writable {\G_3} x$}
+  \AxiomC{$\G_3 = \mathsf{update}(\G, w, t_2)$}
+  \AxiomC{$\writable {\G_3} w$}
   \RightLabel{(assign)}
   \QuinaryInfC{$\G_1 \ent w \eqe e : \unitt \tne \G_3$}
 \end{prooftree}
@@ -279,24 +284,32 @@
 \begin{align*}
   \ell &\cceq \ell_x &\text{(locations, $\mathcal L$)} \\
   v
-  &\cceq \unitt \alt n \alt \ell^m
+  &\cceq \unitt \alt n \alt \ell
   &\text{(values, $\Val$)} \\
   \tilde v
   &\cceq \bot \alt v
   &\text{(partial values, $\tilde \Val$)} \\
   \\
-  S &\in \Loc \mapsto \tilde \Val \times \{\mathsf{imm}, \mathsf{mut}\} &\text{(store)} \\
+  S &\in \Loc \mapsto \tilde \Val &\text{(store)} \\
   \\
   \config S e &\Downarrow \config S v &\text{(expressions)} \\
   \config S s &\Downarrow S &\text{(statements)} \\
   \config S p &\Downarrow \config S v &\text{(programs)}
 \end{align*}
 
-\begin{align*}
-  \loc S x &= \ell_x \\
-  \loc S {\dref w} &= \ell_x \quad \text{where } S(\loc S w) = \ell_x^{m}
-\end{align*}
-\bigskip
+
+\begin{prooftree}
+  \AxiomC{}
+  \RightLabel{(loc-var)}
+  \UnaryInfC{$x \rightsquigarrow \ell_x$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$w \rightsquigarrow \ell_x$}
+  \AxiomC{$(\ell_x \mapsto \ell_y) \in S$}
+  \RightLabel{(loc-drf)}
+  \BinaryInfC{$\dref w \rightsquigarrow \ell_y$}
+\end{prooftree}
 
 \begin{center}
   \AxiomC{}
@@ -313,29 +326,39 @@
 \end{center}
 
 \begin{center}
-  \AxiomC{$S(\loc S w) \neq \ell_x^\mathsf{mut}$}
+  \AxiomC{$w \rightsquigarrow \ell_x$}
+  \AxiomC{$(\ell_x \mapsto v) \in S$}
   \RightLabel{(place-copy)}
-  \UnaryInfC{$\config S w \evl \config S {S(\loc S w)}$}
+  \BinaryInfC{$\config S {\copye w} \evl \config S {v}$}
   \DisplayProof
 \end{center}
 
 \begin{center}
-  \AxiomC{$S(\loc S w) = \ell_x^\mathsf{mut}$}
-  \RightLabel{(place-move)}
-  \UnaryInfC{$\config S w \evl \config {S[\loc S w \mapsto \bot]} {S(\loc S w)}$}
+  \AxiomC{$w \rightsquigarrow \ell_x$}
+  \AxiomC{$(\ell_x \mapsto v) \in S$}
+  \RightLabel{(move)}
+  \BinaryInfC{$\config S w \evl \config {S[\ell_x \mapsto \bot]} {v}$}
   \DisplayProof
 \end{center}
 
 \begin{prooftree}
-  \AxiomC{}
+  \AxiomC{$w \rightsquigarrow \ell$}
   \RightLabel{(brw)}
-  \UnaryInfC{$\config S {\brw w} \evl \config S {\loc S w^{\mathsf{imm}}}$}
+  \UnaryInfC{$\config S {\brw w} \evl \config S {\ell}$}
 \end{prooftree}
 
 \begin{prooftree}
-  \AxiomC{}
-  \RightLabel{(mbrw)}
-  \UnaryInfC{$\config S {\mbrw w} \evl \config S {\loc S w^{\mathsf{mut}}}$}
+  \AxiomC{$w \rightsquigarrow \ell$}
+  \RightLabel{(mut-brw)}
+  \UnaryInfC{$\config S {\mbrw w} \evl \config S {\ell}$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$w \rightsquigarrow \ell_x$}
+  \AxiomC{$(\ell_x \mapsto \tilde v) \in S_1$}
+  \AxiomC{$\config {S_1} {e} \evl \config {S_2} {v}$}
+  \RightLabel{(assign)}
+  \TrinaryInfC{$\config {S_1} {w \eqe e} \evl \config {S_2[\ell_x \mapsto v]} {\unitt}$}
 \end{prooftree}
 
 \begin{center}
@@ -348,7 +371,21 @@
 \begin{center}
   \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
   \RightLabel{(let)}
-  \UnaryInfC{$\config {S_1} {\lett x e} \evl S_2[x \mapsto v]$}
+  \UnaryInfC{$\config {S_1} {\lett x e} \evl S_2[\ell_x \mapsto v]$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
+  \RightLabel{(let-mut)}
+  \UnaryInfC{$\config {S_1} {\lete \mute x \eqe e} \evl S_2[\ell_x \mapsto v]$}
+  \DisplayProof
+\end{center}
+
+\begin{center}
+  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
+  \RightLabel{(expr-stmt)}
+  \UnaryInfC{$\config {S_1} {e} \evl S_2$}
   \DisplayProof
 \end{center}
 

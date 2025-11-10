@@ -1,6 +1,6 @@
 open Utils
 
-module A = Parse.Ast
+module A = Main_parser.Ast
 open Ast
 
 let not_implemented pos =
@@ -13,7 +13,7 @@ let rec expr_of_expr (e : pos A.expr) : (expr, Error_msg.t) result =
   let _expr_of_expr : pos A._expr -> (_expr, Error_msg.t) result = function
     | Unit -> Ok Unit
     | Int32 n -> Ok (Int32 n)
-    | Place_expr w -> Ok (Place_expr w)
+    | Place_expr w -> Ok (Place_expr (ref false, w))
     | Borrow (m, w) -> Ok (Borrow (m, w))
     | Bop(Asn, e1, e2) ->
       let* e1 = expr_of_expr e1 in
@@ -43,7 +43,7 @@ let prog_of_stmts (ss : pos A.stmts) : (prog, Error_msg.t) result =
 
 let parse ~filename =
   let open A in
-  let* p = Parse.parse ~filename in
+  let* p = Main_parser.parse ~filename in
   match p with
   | [] -> Error missing_main
   | [f] ->

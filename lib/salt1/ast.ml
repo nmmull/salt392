@@ -2,9 +2,9 @@ open Utils
 
 type ident = string
 
-type mut = Parse.Ast.mut = Mutable | Immutable
+type mut = Main_parser.Ast.mut = Mutable | Immutable
 
-type place_expr = Parse.Ast.place_expr =
+type place_expr = Main_parser.Ast.place_expr =
   | Var of ident
   | Deref of place_expr
 

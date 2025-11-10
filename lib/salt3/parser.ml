@@ -1,6 +1,6 @@
 open Utils
 
-module A = Parse.Ast
+module A = Main_parser.Ast
 open Ast
 
 let not_implemented pos =
@@ -46,7 +46,7 @@ and prog_of_stmts (ss : pos A.stmts) : (prog, Error_msg.t) result =
 
 let parse ~filename =
   let open A in
-  let* p = Parse.parse ~filename in
+  let* p = Main_parser.parse ~filename in
   match p with
   | [] -> Error missing_main
   | [f] ->

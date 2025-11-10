@@ -1,6 +1,6 @@
 let () =
   let filename = Sys.argv.(1) in
-  match Salt.Parse.parse ~filename with
+  match Salt.Main_parser.parse ~filename with
   | Ok _ -> ()
   | Error e ->
     In_channel.with_open_text filename

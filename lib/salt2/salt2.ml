@@ -1,5 +1,5 @@
 open Utils
-open Ast
+include Ast
 
 type ty =
   | Int32Ty
@@ -229,16 +229,43 @@ let rec write pos ctxt w t =
     | Full BorrowTy (Mutable, w2) -> write pos ctxt (nest_place w1 w2) t
     | _ -> Error (cannot_assign_behind_ref pos w)
 
+let replace t1 w t2 =
+  let rec extend w1 w2 w3 =
+    match w1 with
+    | Var x -> Var x
+    | Deref w1 ->
+      if w1 = w2
+      then w3
+      else Deref (extend w1 w2 w3)
+  in
+  match t1, t2 with
+  | BorrowTy (m, w1), BorrowTy (_, w2) ->
+    BorrowTy (m, extend w1 w w2)
+  | _ -> t1
+
+let replace t1 w t2 =
+  match t1 with
+  | Full t1 -> Full (replace t1 w t2)
+  | Moved t1 -> Moved (replace t1 w t2)
+
+let update pos ctxt w t =
+  Result.map
+    (Map.map (fun slot -> { slot with ty = replace slot.ty w t }))
+    (write pos ctxt w t)
+
 let rec ty_expr ctxt e =
   match e.expr with
   | Unit -> Ok (UnitTy, ctxt)
   | Int32 _ -> Ok (Int32Ty, ctxt)
-  | Place_expr w -> (
+  | Place_expr (copyable, w) -> (
     let* slot = ty_place e.pos ctxt w in
     match slot.ty with
     | Full ty ->
       if copy ty
-      then Ok (ty, ctxt)
+      then begin
+        copyable := true;
+        Ok (ty, ctxt)
+      end
       else Ok (ty, move ctxt w)
     | Moved _ -> Error (use_moved e.pos w)
   )
@@ -282,13 +309,13 @@ let rec ty_expr ctxt e =
     )
   | Assign (e1, e2) ->
     match e1.expr with
-    | Place_expr w -> (
+    | Place_expr (_, w) -> (
         let* slot = Result.map_error (fun _ -> use_moved e.pos w) (ty_place e1.pos ctxt w) in
         let* _ = guard (slot.mut = Mutable) (cannot_assign_twice e.pos w) in
         let t1 = slot.ty in
         let* t2, ctxt = ty_expr ctxt e2 in
         let* _ = guard (ty_equiv ctxt t1 (Full t2)) (exp_ty e2.pos ctxt t1 (Full t2)) in
-        let* ctxt = write e.pos ctxt w t2 in
+        let* ctxt = update e.pos ctxt w t2 in
         let* _ = guard (writable ctxt w) (cannot_assign_borrowed e.pos w) in
         Ok (UnitTy, ctxt)
       )
@@ -318,7 +345,7 @@ let ty ctxt prog =
 type value =
   | UnitV
   | Int32V of int32
-  | Loc of mut * ident
+  | Loc of ident
 
 type store = value option Map.t
 
@@ -327,14 +354,14 @@ let pp_value ppf =
   function
   | UnitV -> fprintf ppf "()"
   | Int32V n -> fprintf ppf "%d" (Int32.to_int n)
-  | Loc (_, x) -> fprintf ppf "loc(%s)" x
+  | Loc x -> fprintf ppf "loc(%s)" x
 
 let rec loc store w =
   match w with
   | Var x -> x
   | Deref w ->
     match Map.find (loc store w) store with
-    | Some Loc (_, x) -> x
+    | Some Loc x -> x
     | _ -> assert false
 
 let read store w = Map.find (loc store w) store
@@ -344,16 +371,19 @@ let rec eval_expr store e =
   match e.expr with
   | Unit -> store, UnitV
   | Int32 n -> store, Int32V n
-  | Place_expr w -> (
+  | Place_expr (copyable, w) -> (
       match read store w with
-      | Some Loc (Mutable, x) -> Map.add x None store, Loc (Mutable, x)
+      | Some Loc x ->
+        if !copyable
+        then store, Loc x
+        else Map.add x None store, Loc x
       | Some v -> store, v
       | _ -> assert false
   )
-  | Borrow (mut, w) -> store, Loc (mut, loc store w)
+  | Borrow (_, w) -> store, Loc (loc store w)
   | Assign (e1, e2) ->
     match e1.expr, eval_expr store e2 with
-    | Place_expr w, (store, v) -> write store w (Some v), UnitV
+    | Place_expr (_, w), (store, v) -> write store w (Some v), UnitV
     | _ -> assert false
 
 let eval_stmt store s =

@@ -131,8 +131,8 @@
 \end{center}
 
 \begin{center}
-  \AxiomC{$\G \ent x_1 : \langle t_1 \rangle^m$}
-  \AxiomC{$\G \ent x_2 : \langle t_2 \rangle^m$}
+  \AxiomC{$\G \ent x_1 : \langle t_1 \rangle^{m_1}$}
+  \AxiomC{$\G \ent x_2 : \langle t_2 \rangle^{m_2}$}
   \AxiomC{$\G \ent t_1 \approx t_2$}
   \RightLabel{($\approx$-ref)}
   \TrinaryInfC{$\G \ent \brw x_1 \approx \brw x_2$}
@@ -245,22 +245,23 @@
 \end{prooftree}
 
 \begin{prooftree}
+  \AxiomC{$\ell_x \in \mathsf{dom}(S)$}
   \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
   \RightLabel{(assign)}
-  \UnaryInfC{$\config {S_1} {x \eqe e} \evl \config {S_2[x \mapsto v]} {\unitt}$}
+  \BinaryInfC{$\config {S_1} {x \eqe e} \evl \config {S_2[\ell_x \mapsto v]} {\unitt}$}
 \end{prooftree}
 
 \begin{center}
   \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
   \RightLabel{(let)}
-  \UnaryInfC{$\config {S_1} {\lett x e} \evl S_2[x \mapsto v]$}
+  \UnaryInfC{$\config {S_1} {\lett x e} \evl S_2[\ell_x \mapsto v]$}
   \DisplayProof
 \end{center}
 
 \begin{center}
   \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
   \RightLabel{(let-mut)}
-  \UnaryInfC{$\config {S_1} {\lete \mute x \eqe e} \evl S_2[x \mapsto v]$}
+  \UnaryInfC{$\config {S_1} {\lete \mute x \eqe e} \evl S_2[\ell_x \mapsto v]$}
   \DisplayProof
 \end{center}
 
