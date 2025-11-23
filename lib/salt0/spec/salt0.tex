@@ -3,6 +3,7 @@
 \usepackage{amsthm, mathtools, stmaryrd}
 \usepackage{todonotes} %% has coloring?
 \usepackage{bussproofs}
+\usepackage{mathpartir}
 \pagenumbering{gobble}
 \input{../../../macros.tex}
 \title{\texttt{salt0}: Straight Line Programs}
@@ -26,7 +27,6 @@
   \unitt
   \alt n
   \alt x
-  \alt e \plus e
   &\text{(expressions, $\E$)} \\
   s
   &\cceq
@@ -56,48 +56,41 @@
 \end{align*}
 \bigskip
 
-\begin{center}
-  \AxiomC{}
-  \RightLabel{(unit)}
-  \UnaryInfC{$\G \ent \unt : \unt$}
-  \DisplayProof
-\end{center}
+\begin{mathpar}
+  \inferrule*[right=unit]{
+  }{
+    \G \ent \unt : \unt
+  }
+  \and
+  \inferrule*[right=int]{
+    n \in \Z
+  }{
+    \G \ent n : \intt
+  }
+  \and
+  \inferrule*[right=var]{
+    (x \mapsto t) \in \G
+  }{
+    \G \ent x : t
+  }
+  \and
+  \inferrule*[right=let]{
+    x \not \in \dom(\G)
+    \and
+    \G \ent e : t
+  }{
+    \G \ent \lete x \eqe e \tne \G[x \mapsto t]
+  }
+  \and
+  \inferrule*[right=prog]{
+    \G_1 \ent s \dashv \G_2
+    \and
+    \G_2 \ent p : t
+  }{
+    \G_1 \ent s \semi p : t
+  }
 
-\begin{center}
-  \AxiomC{$n \in \mathbb Z$}
-  \RightLabel{(int)}
-  \UnaryInfC{$\G \ent n : \intt$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$(x \mapsto t) \in \G$}
-  \RightLabel{(var)}
-  \UnaryInfC{$\G \ent x : t$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent e_1 : \intt$}
-  \AxiomC{$\G \ent e_2 : \intt$}
-  \RightLabel{(add)}
-  \BinaryInfC{$\G \ent e_1 \plus e_2 : \intt$}
-  \DisplayProof
-\end{center}
-
-\begin{prooftree}
-  \AxiomC{$x \not \in \mathsf{dom}(\G)$}
-  \AxiomC{$\G \ent e : t$}
-  \RightLabel{(let)}
-  \BinaryInfC{$\G \ent \lete x \eqe e \tne \G[x \mapsto t]$}
-\end{prooftree}
-
-\begin{prooftree}
-  \AxiomC{$\G_1 \ent s \dashv \G_2$}
-  \AxiomC{$\G_2 \ent p : t$}
-  \RightLabel{(prog)}
-  \BinaryInfC{$\G_1 \ent s \ \code{;} \ p : t$}
-\end{prooftree}
+\end{mathpar}
 
 \chapter*{Evaluation}
 
@@ -110,55 +103,42 @@
   \\
   S &\in \V \mapsto \Val &\text{(store)} \\
   \\
-  \config S e &\Downarrow v &\text{(expressions)} \\
-  \config S s &\Downarrow S &\text{(statements)} \\
-  \config S p &\Downarrow v &\text{(programs)}
+  S &\ent e \evl v &\text{(expressions)} \\
+  S &\ent s \tne S &\text{(statements)} \\
+  S &\ent p \evl v &\text{(programs)}
 \end{align*}
 \bigskip
 
-\begin{center}
-  \AxiomC{}
-  \RightLabel{(unit)}
-  \UnaryInfC{$\evj S \unitt \unitt$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$n \in \mathbb Z$}
-  \RightLabel{(int)}
-  \UnaryInfC{$\config S n \Downarrow n$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{}
-  \RightLabel{(var)}
-  \UnaryInfC{$\evj S x {S(x)}$}
-  \DisplayProof
-\end{center}
-
-
-\begin{center}
-  \AxiomC{$\evj S {e_1} {v_1}$}
-  \AxiomC{$\evj S {e_2} {v_2}$}
-  \RightLabel{(add)}
-  \BinaryInfC{$\evj S {\bop{\add}{e_1}{e_2}} {v_1 + v_2}$}
-  \DisplayProof
-\end{center}
-
-
-\begin{center}
-  \AxiomC{$\evj S e v$}
-  \RightLabel{(let)}
-  \UnaryInfC{$\evj S {\lett x e} {S[x \mapsto v]}$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\evj {S_1} {s} {S_2}$}
-  \AxiomC{$\evj {S_2} p v$}
-  \RightLabel{(prog)}
-  \BinaryInfC{$\evj {S_1} {s \ \code{;} \ p} v$}
-  \DisplayProof
-\end{center}
+\begin{mathpar}
+  \inferrule*[right=unit]{
+  }{
+    S \ent \unt \evl \unt
+  }
+  \and
+  \inferrule*[right=int]{
+    n \in \mathbb Z
+  }{
+    S \ent n \evl n
+  }
+  \and
+  \inferrule*[right=var]{
+    (x \mapsto v) \in S
+  }{
+    S \ent x \evl v
+  }
+  \and
+  \inferrule*[right=let]{
+    S \ent e \evl v
+  }{
+    S \ent \lete x \eqe e \tne {S[x \mapsto v]}
+  }
+  \and
+  \inferrule*[right=prog]{
+    S_1 \ent s \tne S_2
+    \and
+    S_2 \ent p \evl v
+  }{
+    S_1 \ent s \semi p \evl v
+  }
+\end{mathpar}
 \end{document}
