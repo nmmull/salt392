@@ -1,7 +1,3 @@
 (library
- (libraries
-  fmt
-  main_parser
-  error_msg
-  utils)
+ (libraries fmt main_parser error_msg utils)
  (name salt1))

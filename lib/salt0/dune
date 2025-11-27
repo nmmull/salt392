@@ -1,6 +1,3 @@
 (library
- (libraries
-  main_parser
-  error_msg
-  utils)
+ (libraries main_parser error_msg utils)
  (name salt0))
