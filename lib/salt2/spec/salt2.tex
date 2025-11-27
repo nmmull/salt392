@@ -1,9 +1,10 @@
 \documentclass{report}
 \usepackage{mathpazo}
-\usepackage{geometry}[margin=1in]
 \usepackage{amsthm, amssymb, mathtools, stmaryrd}
-\usepackage{todonotes} %% has coloring?
+\usepackage{xcolor}
+\usepackage{mathpartir}
 \usepackage{bussproofs}
+\usepackage{geometry}[margins=1in]
 \pagenumbering{gobble}
 \input{../../../macros.tex}
 \title{\texttt{salt2}: Mutable References}
@@ -35,9 +36,9 @@
   &\text{(expressions, $\E$)} \\
   s
   &\cceq
-  e
-  \alt \lete x \eqe e
+  \lete x \eqe e
   \alt \lete \mute x \eqe e
+  \alt e
   &\text{(statements, $\mathcal S$)} \\
   p
   &\cceq
@@ -67,215 +68,211 @@
   \G &\in \V \mapsto \mathbb S_\T & \text{(contexts)}\\
   \\
   &\mathsf{copyable}(t) & \text{(copyability)} \\
-  \G &\ent w : u & \text{(place expressions)} \\
   \G &\ent \mathsf{readable}(w) &\text{(readability)} \\
   \G &\ent \mathsf{writable}(w) &\text{(writability)} \\
   \G &\ent \tilde t \approx \tilde t &\text{(type compatibility)} \\
+  \G &\ent w : u & \text{(place expressions)} \\
   \G &\ent e : t \tne \G &\text{(expressions)} \\
   \G &\ent s \tne \G &\text{(statments)} \\
   \G &\ent p : t \tne \G &\text{(programs)}
 \end{align*}
 
-\begin{center}
-  \AxiomC{$(x \mapsto \langle \tilde t \rangle^m) \in \G$}
-  \RightLabel{(var)}
-  \UnaryInfC{$\G \ent x : \langle \tilde t \rangle^m$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent w_1 : \langle \brw w_2 \rangle^{m_1}$}
-  \AxiomC{$\G \ent w_2 : \langle t \rangle ^{m_2}$}
-  \RightLabel{(deref)}
-  \BinaryInfC{$\G \ent \dref w_1 : \langle t \rangle^{m_2}$}
-  \DisplayProof
-\end{center}
-
-
-\begin{center}
-  \AxiomC{}
-  \RightLabel{(unit)}
-  \UnaryInfC{$\G \ent \unt : \unt \tne \G$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$n \in \mathbb Z$}
-  \RightLabel{(int)}
-  \UnaryInfC{$\G \ent n : \intt \tne \G$}
-  \DisplayProof
-\end{center}
-
-\begin{prooftree}
-  \AxiomC{$\nexists y,l . (y \mapsto \mbrw \code *^l x) \in \Gamma$}
-  \RightLabel{(readable)}
-  \UnaryInfC{$\readable \Gamma {\code *^k x}$}
-\end{prooftree}
-
-\begin{center}
-  \AxiomC{}
-  \RightLabel{(copy-unit)}
-  \UnaryInfC{$\mathsf{copyable}(\unitt)$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{}
-  \RightLabel{(copy-int)}
-  \UnaryInfC{$\mathsf{copyable}(\intt)$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{}
-  \RightLabel{(copy-brw)}
-  \UnaryInfC{$\mathsf{copyable}(\brw w)$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent w : \langle t \rangle^m$}
-  \AxiomC{$\readable \G w$}
-  \AxiomC{$\mathsf{copyable}(t)$}
-  \RightLabel{(place-copy)}
-  \TrinaryInfC{$\G \ent \copye w : t \tne \G$}
-  \DisplayProof
-\end{center}
-
-\begin{prooftree}
-  \AxiomC{$\readable \Gamma {\code *^k x}$}
-  \AxiomC{$\nexists y,l . (y \mapsto \brw \code *^l x) \in \Gamma$}
-  \RightLabel{(writable)}
-  \BinaryInfC{$\writable \Gamma {\code *^k x}$}
-\end{prooftree}
-
-\begin{center}
-  \AxiomC{$\G \ent x : \langle \mbrw w \rangle^m$}
-  \AxiomC{$\writable \G x$}
-  \RightLabel{(place-move)}
-  \BinaryInfC{$\G \ent x : \mbrw w \tne \Gamma[x \mapsto \mvty {\mbrw w}]$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent w : \langle t \rangle^m$}
-  \AxiomC{$\readable \G {w}$}
-  \RightLabel{(brw)}
-  \BinaryInfC{$\G \ent \brw w : \brw w \tne \Gamma$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent w : \langle t \rangle ^{\mathsf{mut}}$}
-  \AxiomC{$\writable \G {w}$}
-  \AxiomC{$\mutable \G w$}
-  \RightLabel{(mut-brw)}
-  \TrinaryInfC{$\G \ent \mbrw w : \mbrw w \tne \Gamma$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{}
-  \RightLabel{($\approx$-int)}
-  \UnaryInfC{$\Gamma \vdash \intty \approx \intty$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{}
-  \RightLabel{($\approx$-unit)}
-  \UnaryInfC{$\Gamma \vdash \unitty \approx \unitty$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent w_1 : \langle \tilde t_1 \rangle^{m_1}$}
-  \AxiomC{$\G \ent w_2 : \langle \tilde t_2 \rangle^{m_2}$}
-  \AxiomC{$\G \ent \tilde t_1 \approx \tilde t_2$}
-  \RightLabel{($\approx$-brw)}
-  \TrinaryInfC{$\G \ent \brw w_1 \approx \brw w_2$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent w_1 : \langle \tilde t_1 \rangle^{m_1}$}
-  \AxiomC{$\G \ent w_2 : \langle \tilde t_2\rangle^{m_2}$}
-  \AxiomC{$\G \ent \tilde t_1 \approx \tilde t_2$}
-  \RightLabel{($\approx$-mbrw)}
-  \TrinaryInfC{$\G \ent \mbrw w_1 \approx \mbrw w_2$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent t_1 \approx \tilde t_2$}
-  \RightLabel{($\approx$-partial$_1$)}
-  \UnaryInfC{$\G \ent \mvty {t_1} \approx \tilde t_2$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G \ent \tilde t_1 \approx t_2$}
-  \RightLabel{($\approx$-partial$_2$)}
-  \UnaryInfC{$\G \ent \tilde t_1 \approx \mvty {t_2}$}
-  \DisplayProof
-\end{center}
+\begin{mathpar}
+  \inferrule*[right=var]{
+    (x \mapsto t^m) \in \G
+  }{
+    \G \ent x : \langle t \rangle^m
+  }
+  \and
+  \inferrule*[right=deref]{
+    \G \ent w : \langle \brw x \rangle^{m_1}
+    \and
+    \G \ent x : \langle t \rangle^{m_2}
+  }{
+    \G \ent \dref w : \langle t \rangle^{m_2}
+  }
+  \and
+  \inferrule*[right=unit]{
+  }{
+    \G \ent \unt : \unt
+  }
+  \and
+  \inferrule*[right=int]{
+    n \in \Z
+  }{
+    \G \ent n : \intt \tne \G
+  }
+  \and
+  \inferrule*[right=readable]{
+    \nexists y,l . (y \mapsto \mbrw \code *^l x) \in \G
+  }{
+    \readable \G {\code *^k x}
+  }
+  \and
+  \inferrule*[right=copyUnit]{
+  }{
+    \copyable{\unt}
+  }
+  \and
+  \inferrule*[right=copyInt]{
+  }{
+    \copyable{\intt}
+  }
+  \and
+  \inferrule*[right=copyRef]{
+  }{
+    \copyable{\brw w}
+  }
+  \and
+  \inferrule*[right=placeCopy]{
+    \G \ent w : \langle t \rangle^m
+    \and
+    \readable \G w
+    \and
+    \copyable{t}
+  }{
+    \G \ent \copye w : t \tne \G
+  }
+  \and
+  \inferrule*[right=writable]{
+    \readable \G {\code *^k x}
+    \and
+    \nexists y,l . (y \mapsto \brw \code *^l x) \in \G
+  }{
+    \writable \G {\code *^k x}
+  }
+  \and
+  \inferrule*[right=placeMove]{
+    \G \ent x : \langle \mbrw w \rangle^m
+    \and
+    \writable \G x
+  }{
+    \G \ent x : \mbrw w \tne \Gamma[x \mapsto \mvty {\mbrw w}]
+  }
+  \and
+  \inferrule*[right=ref]{
+    \G \ent w : \langle t \rangle^m
+    \and
+    \readable \G {w}
+  }{
+    \G \ent \brw w : \brw w \tne \G
+  }
+  \and
+  \inferrule*[right=mutRef]{
+    \G \ent w : \langle t \rangle ^{\mutt}
+    \and
+    \writable \G w
+    \and
+    \mutable \G w
+  }{
+    \G \ent \mbrw w : \mbrw w \tne \G
+  }
+  \and
+  \inferrule*[right=$\approx$-unit]{
+  }{
+    \G \ent \unt \approx \unt
+  }
+  \and
+  \inferrule*[right=$\approx$-int]{
+  }{
+    \G \ent \intt \approx \intt
+  }
+  \and
+  \inferrule*[right=$\approx$-ref]{
+    \G \ent w_1 : \langle \tilde t_1 \rangle^{m_1}
+    \and
+    \G \ent w_2 : \langle \tilde t_2 \rangle^{m_2}
+    \and
+    \G \ent \tilde t_1 \approx \tilde t_2
+  }{
+    \G \ent \brw w_1 \approx \brw w_2
+  }
+  \and
+  \inferrule*[right=$\approx$-mutRef]{
+    \G \ent w_1 : \langle \tilde t_1 \rangle^{m_1}
+    \and
+    \G \ent w_2 : \langle \tilde t_2\rangle^{m_2}
+    \and
+    \G \ent \tilde t_1 \approx \tilde t_2
+  }{
+    \G \ent \mbrw w_1 \approx \mbrw w_2
+  }
+  \and
+  \inferrule*[right=$\approx$-partial$_1$]{
+    \G \ent t_1 \approx \tilde t_2
+  }{
+    \G \ent \mvty {t_1} \approx \tilde t_2
+  }
+  \and
+  \inferrule*[right=$\approx$-partial$_2$]{
+    \G \ent \tilde t_1 \approx t_2
+  }{
+    \G \ent \tilde t_1 \approx \mvty {t_2}
+  }
+\end{mathpar}
 
 \begin{align*}
-  \writee(\G, x, t) &= \G[x \mapsto t] \\
-  \writee(\G, \code*^{k + 1}x, t) &= \writee(\G, \code*^k w, t) \quad \text{where} \quad (x \mapsto \langle \mbrw w \rangle^m) \in \G \\
-\end{align*}
-\begin{align*}
-  \mathsf{replace}(\code{\&}\code{*}^{k + 1}w_1 , w_1, \code{\&}[\code{mut}] w_2) &= \code{\&}\code{*}^k w_2 \\
-  \mathsf{replace}(\code{\&}\code{mut} \ \code{*}^{k + 1}w_1 , w_1, \code{\&}[\code{mut}] w_2) &= \code{\&}\code{mut} \ \code{*}^k w_2 \\
+  \writee(\G, x, t) &=
+  \G[x \mapsto t] \\
+  \writee(\G, \code *^{k + 1}x, t) &=
+  \writee(\G, \code *^k w, t) \quad \text{where} \quad (x \mapsto \langle \mbrw w \rangle^m) \in \G \\
+  \\
+  \mathsf{replace}(\brw \code{*}^{k + 1}w_1 , w_1, \brw w_2) &= \brw \code *^k w_2 \\
+  \mathsf{replace}(\brw \code{*}^{k + 1}w_1 , w_1, \mbrw w_2) &= \brw \code *^k w_2 \\
+  \mathsf{replace}(\mbrw \code{*}^{k + 1}w_1 , w_1, \brw w_2) &= \mbrw \code *^k w_2 \\
+  \mathsf{replace}(\mbrw \code{*}^{k + 1}w_1 , w_1, \mbrw w_2) &= \mbrw \code *^k w_2 \\
   \mathsf{replace}(t_1, w, t_2) &= t_1 \\
   \mathsf{replace}(\mvty {t_1} , w, t_2) &= \mvty {\mathsf{replace}(t_1, w, t_2)} \\
-  \mathsf{replace}(\G, w, t_2) &= \{ x \mapsto \mathsf{replace}(\tilde t_1, w, t_2) : (x \mapsto \tilde t_1) \in \G \}
+  \mathsf{replace}(\G, w, t_2) &= \{ x \mapsto \mathsf{replace}(\tilde t_1, w, t_2) : (x \mapsto \tilde t_1) \in \G \} \\
+  \\
+  \mathsf{update}(\G, w, t_2) &= \mathsf{replace}(\writee(\G, w, t_2), w, t_2)
 \end{align*}
 
-\begin{align*}
-  \mathsf{update}(\G, w, t_2) = \mathsf{replace}(\writee(\G, w, t_2), w, t_2)
-\end{align*}
-
-
-\begin{prooftree}
-  \AxiomC{$\G_1 \ent w : \langle \tilde t_1 \rangle^{\mathsf{mut}}$}
-  \AxiomC{$\G_1 \ent e : t_2 \tne \G_2$}
-  \AxiomC{$\G_2 \ent \tilde t_1 \approx t_2$}
-  \AxiomC{$\G_3 = \mathsf{update}(\G, w, t_2)$}
-  \AxiomC{$\writable {\G_3} w$}
-  \RightLabel{(assign)}
-  \QuinaryInfC{$\G_1 \ent w \eqe e : \unitt \tne \G_3$}
-\end{prooftree}
-
-\begin{center}
-  \AxiomC{$\G_1 \ent e : t \tne \G_2$}
-  \RightLabel{(expr-stmt)}
-  \UnaryInfC{$\G_1 \ent e \tne \G_2$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G_1 \ent e : t \tne \G_2$}
-  \AxiomC{$x \not \in \mathsf{dom}(\G_2)$}
-  \RightLabel{(let)}
-  \BinaryInfC{$\G_1 \ent \lete x \eqe e \tne \G_2[x \mapsto t^{\mathsf{imm}}]$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\G_1 \ent e : t \tne \G_2$}
-  \AxiomC{$x \not \in \mathsf{dom}(\G_2)$}
-  \RightLabel{(let-mut)}
-  \BinaryInfC{$\G_1 \ent \lete \mute x \eqe e \tne \G_2[x \mapsto t^{\mathsf{mut}}]$}
-  \DisplayProof
-\end{center}
-
-\begin{prooftree}
-  \AxiomC{$\G_1 \ent s \tne \G_2$}
-  \AxiomC{$\G_2 \ent p : t \tne \G_3$}
-  \RightLabel{(prog)}
-  \BinaryInfC{$\G_1 \ent s \ \code{;} \ p : t \tne \G_3$}
-\end{prooftree}
+\begin{mathpar}
+  \inferrule*[right=assign]{
+    \G_1 \ent w : \langle \tilde t_1 \rangle^{\mutt}
+    \and
+    \G_1 \ent e : t_2 \tne \G_2
+    \and
+    \G_2 \ent \tilde t_1 \approx t_2
+    \and
+    \G_3 = \mathsf{update}(\G, w, t_2)
+    \and
+    \writable {\G_3} w
+  }{
+    \G_1 \ent w \eqe e : \unt \tne \G_3
+  }
+  \and
+  \inferrule*[right=let]{
+    \G_1 \ent e : t \tne \G_2
+    \and
+    x \not \in \dom(\G_2)
+  }{
+    \G_1 \ent \lete x \eqe e \tne \G_2[x \mapsto t^{\imm}]
+  }
+  \and
+  \inferrule*[right=letMut]{
+    \G_1 \ent e : t \tne \G_2
+    \and
+    x \not \in \dom(\G_2)
+  }{
+    \G_1 \ent \lete \mute x \eqe e \tne \G_2[x \mapsto t^{\mutt}]
+  }
+  \and
+  \inferrule*[right=exprStmt]{
+    \G_1 \ent e : t \tne \G_2
+  }{
+    \G_1 \ent e \tne \G_2
+  }
+  \and
+  \inferrule*[right=prog]{
+    \G_1 \ent s \tne \G_2
+    \and
+    \G_2 \ent p : t \tne \G_3
+  }{
+    \G_1 \ent s \semi p : t \tne \G_3
+  }
+\end{mathpar}
 
 \chapter*{Evaluation}
 
@@ -292,108 +289,99 @@
   \\
   S &\in \Loc \mapsto \tilde \Val &\text{(store)} \\
   \\
-  \config S e &\Downarrow \config S v &\text{(expressions)} \\
-  \config S s &\Downarrow S &\text{(statements)} \\
-  \config S p &\Downarrow \config S v &\text{(programs)}
+  S &\ent w \rightsquigarrow \ell &\text{(place locations)} \\
+  S &\ent e \evl v \tne S &\text{(expressions)} \\
+  S &\ent s \tne S &\text{(statements)} \\
+  S &\ent p \evl v \tne S &\text{(programs)}
 \end{align*}
 
-
-\begin{prooftree}
-  \AxiomC{}
-  \RightLabel{(loc-var)}
-  \UnaryInfC{$x \rightsquigarrow \ell_x$}
-\end{prooftree}
-
-\begin{prooftree}
-  \AxiomC{$w \rightsquigarrow \ell_x$}
-  \AxiomC{$(\ell_x \mapsto \ell_y) \in S$}
-  \RightLabel{(loc-drf)}
-  \BinaryInfC{$\dref w \rightsquigarrow \ell_y$}
-\end{prooftree}
-
-\begin{center}
-  \AxiomC{}
-  \RightLabel{(unit)}
-  \UnaryInfC{$\config S \unitt \evl \config S \unitt$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$n \in \mathbb Z$}
-  \RightLabel{(int)}
-  \UnaryInfC{$\config S n \evl \config S n$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$w \rightsquigarrow \ell_x$}
-  \AxiomC{$(\ell_x \mapsto v) \in S$}
-  \RightLabel{(place-copy)}
-  \BinaryInfC{$\config S {\copye w} \evl \config S {v}$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$w \rightsquigarrow \ell_x$}
-  \AxiomC{$(\ell_x \mapsto v) \in S$}
-  \RightLabel{(move)}
-  \BinaryInfC{$\config S w \evl \config {S[\ell_x \mapsto \bot]} {v}$}
-  \DisplayProof
-\end{center}
-
-\begin{prooftree}
-  \AxiomC{$w \rightsquigarrow \ell$}
-  \RightLabel{(brw)}
-  \UnaryInfC{$\config S {\brw w} \evl \config S {\ell}$}
-\end{prooftree}
-
-\begin{prooftree}
-  \AxiomC{$w \rightsquigarrow \ell$}
-  \RightLabel{(mut-brw)}
-  \UnaryInfC{$\config S {\mbrw w} \evl \config S {\ell}$}
-\end{prooftree}
-
-\begin{prooftree}
-  \AxiomC{$w \rightsquigarrow \ell_x$}
-  \AxiomC{$(\ell_x \mapsto \tilde v) \in S_1$}
-  \AxiomC{$\config {S_1} {e} \evl \config {S_2} {v}$}
-  \RightLabel{(assign)}
-  \TrinaryInfC{$\config {S_1} {w \eqe e} \evl \config {S_2[\ell_x \mapsto v]} {\unitt}$}
-\end{prooftree}
-
-\begin{center}
-  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
-  \RightLabel{(expr-stmt)}
-  \UnaryInfC{$\config {S_1} {e} \evl S_2$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
-  \RightLabel{(let)}
-  \UnaryInfC{$\config {S_1} {\lett x e} \evl S_2[\ell_x \mapsto v]$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
-  \RightLabel{(let-mut)}
-  \UnaryInfC{$\config {S_1} {\lete \mute x \eqe e} \evl S_2[\ell_x \mapsto v]$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\config {S_1} e \evl \config {S_2} v$}
-  \RightLabel{(expr-stmt)}
-  \UnaryInfC{$\config {S_1} {e} \evl S_2$}
-  \DisplayProof
-\end{center}
-
-\begin{center}
-  \AxiomC{$\config {S_1} {s} \evl S_2$}
-  \AxiomC{$\config {S_2} p \evl \config {S_3} v$}
-  \RightLabel{(prog)}
-  \BinaryInfC{$\config {S_1} {s \ \code{;} \ p} \evl \config {S_3} v$}
-  \DisplayProof
-\end{center}
+\begin{mathpar}
+  \inferrule*[right=locVar]{
+  }{
+    S \ent x \rightsquigarrow \ell_x
+  }
+  \and
+  \inferrule*[right=locDeref]{
+    S \ent w \rightsquigarrow \ell_x
+    \and
+    (\ell_x \mapsto \ell_y) \in S
+  }{
+    S \ent \dref w \rightsquigarrow \ell_y
+  }
+  \and
+  \inferrule*[right=unit]{
+  }{
+    S \ent \unt \evl \unt \tne S
+  }
+  \and
+  \inferrule*[right=int]{
+    n \in \Z
+  }{
+    S \ent n \evl n \tne S
+  }
+  \and
+  \inferrule*[right=placeCopy]{
+    S \ent w \rightsquigarrow \ell_x
+    \and
+    (\ell_x \mapsto v) \in S
+  }{
+    S \ent \copye w \evl v \tne S
+  }
+  \and
+  \inferrule*[right=move]{
+    S \ent w \rightsquigarrow \ell_x
+    \and
+    (\ell_x \mapsto v) \in S
+  }{
+    S \ent w \evl v \tne S[\ell_x \mapsto \bot]
+  }
+  \and
+  \inferrule*[right=ref]{
+    S \ent w \rightsquigarrow \ell_x
+  }{
+    S \ent \brw w \evl \ell_x \tne S
+  }
+  \and
+  \inferrule*[right=mutRef]{
+    S \ent w \rightsquigarrow \ell_x
+  }{
+    S \ent \mbrw w \evl \ell_x \tne S
+  }
+  \and
+  \inferrule*[right=assign]{
+    S \ent w \rightsquigarrow \ell_x
+    \and
+    (\ell_x \mapsto \tilde v) \in S_1
+    \and
+    S_1 \ent e \evl v \tne S_2
+  }{
+    S_1 \ent w \eqe e \evl \unt \tne S_2[\ell_x \mapsto v]
+  }
+  \and
+  \inferrule*[right=let]{
+    S_1 \ent e \evl v \tne S_2
+  }{
+    S_1 \ent \lete x \eqe e \tne S_2[\ell_x \mapsto v]
+  }
+  \and
+  \inferrule*[right=letMut]{
+    S_1 \ent e \evl v \tne S_2
+  }{
+    S_1 \ent \lete \mute x \eqe e \tne S_2[\ell_x \mapsto v]
+  }
+  \and
+  \inferrule*[right=exprStmt]{
+    S_1 \ent e \evl v \tne S_2
+  }{
+    S_1 \ent e \tne S_2
+  }
+  \and
+  \inferrule*[right=prog]{
+    S_1 \ent s \tne S_2
+    \and
+    S_2 \ent p \evl v \tne S_3
+  }{
+    S_1 \ent s \semi p \evl v \tne S_3
+  }
+\end{mathpar}
 \end{document}
