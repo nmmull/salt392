@@ -3,7 +3,6 @@
 \usepackage{amsthm, amssymb, mathtools, stmaryrd}
 \usepackage{xcolor}
 \usepackage{mathpartir}
-\usepackage{bussproofs}
 \usepackage{geometry}[margins=1in]
 \pagenumbering{gobble}
 \input{../../../macros.tex}
@@ -28,10 +27,10 @@
   &\cceq
   \unitt
   \alt n
+  \alt \copye w
   \alt w
   \alt \brw w
   \alt \mbrw w
-  \alt \copye w
   \alt w \eqe e
   &\text{(expressions, $\E$)} \\
   s
@@ -79,7 +78,7 @@
 
 \begin{mathpar}
   \inferrule*[right=var]{
-    (x \mapsto t^m) \in \G
+    (x \mapsto \langle t \rangle ^m) \in \G
   }{
     \G \ent x : \langle t \rangle^m
   }
@@ -92,9 +91,17 @@
     \G \ent \dref w : \langle t \rangle^{m_2}
   }
   \and
+  \inferrule*[right=mutDeref]{
+    \G \ent w : \langle \mbrw x \rangle^{m_1}
+    \and
+    \G \ent x : \langle t \rangle^{m_2}
+  }{
+    \G \ent \dref w : \langle t \rangle^{m_2}
+  }
+  \and
   \inferrule*[right=unit]{
   }{
-    \G \ent \unt : \unt
+    \G \ent \unt : \unt \tne \G
   }
   \and
   \inferrule*[right=int]{
@@ -104,7 +111,7 @@
   }
   \and
   \inferrule*[right=readable]{
-    \nexists y,l . (y \mapsto \mbrw \code *^l x) \in \G
+    \nexists y,l . (y \mapsto \langle \mbrw \code *^l x \rangle^m) \in \G
   }{
     \readable \G {\code *^k x}
   }
@@ -137,7 +144,7 @@
   \inferrule*[right=writable]{
     \readable \G {\code *^k x}
     \and
-    \nexists y,l . (y \mapsto \brw \code *^l x) \in \G
+    \nexists y,l . (y \mapsto \langle \brw \code *^l x \rangle^m) \in \G
   }{
     \writable \G {\code *^k x}
   }
@@ -147,7 +154,7 @@
     \and
     \writable \G x
   }{
-    \G \ent x : \mbrw w \tne \Gamma[x \mapsto \mvty {\mbrw w}]
+    \G \ent x : \mbrw w \tne \Gamma[x \mapsto \langle \mvty {\mbrw w} \rangle^m]
   }
   \and
   \inferrule*[right=ref]{
@@ -156,6 +163,20 @@
     \readable \G {w}
   }{
     \G \ent \brw w : \brw w \tne \G
+  }
+  \and
+  \inferrule*[right=mutVar]{
+    (x \mapsto \langle t \rangle^\mutt) \in \G
+  }{
+    \mutable \G x
+  }
+  \and
+  \inferrule*[right=mutDeref]{
+    (x \mapsto \langle \mbrw w \rangle^m) \in \G
+    \and
+    \mutable \G {\code *^k w}
+  }{
+    \mutable \G {\code *^{k + 1} x}
   }
   \and
   \inferrule*[right=mutRef]{
@@ -213,7 +234,7 @@
 
 \begin{align*}
   \writee(\G, x, t) &=
-  \G[x \mapsto t] \\
+  \G[x \mapsto \langle t \rangle^m] \quad \text{where} \quad (x \mapsto \langle \cdot \rangle^m) \in \G\\
   \writee(\G, \code *^{k + 1}x, t) &=
   \writee(\G, \code *^k w, t) \quad \text{where} \quad (x \mapsto \langle \mbrw w \rangle^m) \in \G \\
   \\
@@ -223,7 +244,7 @@
   \mathsf{replace}(\mbrw \code{*}^{k + 1}w_1 , w_1, \mbrw w_2) &= \mbrw \code *^k w_2 \\
   \mathsf{replace}(t_1, w, t_2) &= t_1 \\
   \mathsf{replace}(\mvty {t_1} , w, t_2) &= \mvty {\mathsf{replace}(t_1, w, t_2)} \\
-  \mathsf{replace}(\G, w, t_2) &= \{ x \mapsto \mathsf{replace}(\tilde t_1, w, t_2) : (x \mapsto \tilde t_1) \in \G \} \\
+  \mathsf{replace}(\G, w, t_2) &= \{ x \mapsto \langle \mathsf{replace}(\tilde t_1, w, t_2) \rangle^m : (x \mapsto \langle \tilde t_1 \rangle^m) \in \G \} \\
   \\
   \mathsf{update}(\G, w, t_2) &= \mathsf{replace}(\writee(\G, w, t_2), w, t_2)
 \end{align*}
@@ -235,7 +256,7 @@
     \G_1 \ent e : t_2 \tne \G_2
     \and
     \G_2 \ent \tilde t_1 \approx t_2
-    \and
+    \\
     \G_3 = \mathsf{update}(\G, w, t_2)
     \and
     \writable {\G_3} w
@@ -248,7 +269,7 @@
     \and
     x \not \in \dom(\G_2)
   }{
-    \G_1 \ent \lete x \eqe e \tne \G_2[x \mapsto t^{\imm}]
+    \G_1 \ent \lete x \eqe e \tne \G_2[x \mapsto \langle t \rangle^{\imm}]
   }
   \and
   \inferrule*[right=letMut]{
@@ -256,7 +277,7 @@
     \and
     x \not \in \dom(\G_2)
   }{
-    \G_1 \ent \lete \mute x \eqe e \tne \G_2[x \mapsto t^{\mutt}]
+    \G_1 \ent \lete \mute x \eqe e \tne \G_2[x \mapsto \langle t \rangle^{\mutt}]
   }
   \and
   \inferrule*[right=exprStmt]{
@@ -275,8 +296,6 @@
 \end{mathpar}
 
 \chapter*{Evaluation}
-
-\newcommand{\config}[2]{\langle \ #1 \ , \ #2 \ \rangle}
 
 \begin{align*}
   \ell &\cceq \ell_x &\text{(locations, $\mathcal L$)} \\

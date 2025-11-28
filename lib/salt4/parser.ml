@@ -1,0 +1,61 @@
+open Utils
+
+module A = Main_parser.Ast
+open Ast
+
+let not_implemented pos =
+  Error_msg.mk pos "not implemented"
+
+let missing_main =
+  Error_msg.mk dummy_pos "`main` function found"
+
+let rec expr_of_expr (e : pos A.expr) : (expr, Error_msg.t) result =
+  let _expr_of_expr : pos A._expr -> (_expr, Error_msg.t) result = function
+    | Unit -> Ok Unit
+    | Int32 n -> Ok (Int32 n)
+    | Place_expr w -> Ok (Place_expr w)
+    | Borrow (m, w) -> Ok (Borrow (m, w))
+    | Bop(Asn, e1, e2) ->
+      let* e1 = expr_of_expr e1 in
+      let* e2 = expr_of_expr e2 in
+      Ok (Assign (e1, e2))
+    | Block stmts ->
+      let* prog = prog_of_stmts stmts in
+      Ok (Block prog)
+    | _ -> Error (not_implemented e.meta)
+  in
+  let* expr = _expr_of_expr e.expr in
+  Ok { expr ; pos = e.meta }
+
+and stmt_of_stmt (s : pos A.stmt) : (stmt, Error_msg.t) result =
+  let _stmt_of_stmt : pos A._stmt -> (_stmt, Error_msg.t) result = function
+    | Expr e ->
+      let* e = expr_of_expr e in
+      Ok (Expr e)
+    | Let (m, x, e) ->
+      let* e = expr_of_expr e in
+      Ok (Let (m, x, e))
+  in
+  let* stmt = _stmt_of_stmt s.stmt in
+  Ok { stmt ; pos = s.meta }
+
+and prog_of_stmts (ss : pos A.stmts) : (prog, Error_msg.t) result =
+  let* stmts = all_ok (List.map stmt_of_stmt ss.stmts) in
+  let* last = expr_of_expr ss.last in
+  Ok { stmts ; last }
+
+let parse ~filename =
+  let open A in
+  let* p = Main_parser.parse ~filename in
+  match p with
+  | [] -> Error missing_main
+  | [f] ->
+    if f.name = "main"
+    && f.args = []
+    && f.out_ty = UnitTy
+    then prog_of_stmts f.body
+    else Error missing_main
+  | fs ->
+    match List.find_opt (fun f -> f.name <> "main") fs with
+    | None -> Error missing_main
+    | Some f -> Error (not_implemented f.meta)

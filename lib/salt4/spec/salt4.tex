@@ -6,7 +6,7 @@
 \usepackage{geometry}[margin=1in]
 \pagenumbering{gobble}
 \input{../../../macros.tex}
-\title{\texttt{salt3}: Blocks}
+\title{\texttt{salt4}: Boxes}
 \author{\texttt{CS392-M1}: \textit{Rust, In Practice and in Theory}}
 \date{}
 
@@ -33,6 +33,7 @@
   \alt \mbrw w
   \alt w \eqe e
   \alt \code{\{} \ p \ \code{\}}
+  \alt \boxe e
   &\text{(expressions, $\E$)} \\
   s
   &\cceq
@@ -57,11 +58,13 @@
   \alt \intty
   \alt \brw w
   \alt \mbrw w
+  \alt \boxt t
   &\text{(types, $\T$)} \\
   \tilde t
   &\cceq
   \mvty t
   \alt t
+  \alt \boxt \tilde t
   &\text{(partial types, $\tilde \T$)} \\
   m &\cceq \mathsf{imm} \alt \mathsf{mut} &\text{(mutability)} \\
   u &\cceq \langle \tilde t \rangle^{m}_l &\text{(slot types, $\mathbb S_{\T}$)}\\
@@ -101,6 +104,12 @@
     \G \ent x : \langle \tilde t \rangle^{m_2}_{l_2}
   }{
     \G \ent \dref w : \langle \tilde t \rangle^{m_2}_{l_2}
+  }
+  \and
+  \inferrule*[right=box]{
+    \G \ent w : \langle \boxt \tilde t \rangle^m_l
+  }{
+    \G \ent \dref w : \langle \tilde t \rangle^m_l
   }
   \and
   \inferrule*[right=unit]{
@@ -151,6 +160,21 @@
     \nexists y,j . (y \mapsto \langle \brw \code *^j x \rangle^m_l) \in \G
   }{
     \writable \G {\code *^k x}
+  }
+\end{mathpar}
+
+\begin{align*}
+  \move \G x &= \G[x \mapsto \langle \mvty t \rangle^m_l] \qquad \text{where} \qquad (x \mapsto \langle t \rangle^m_l) \in \G \\
+  \move \G {\code *^{k + 1} x} &=
+\end{align*}
+
+\begin{mathpar}
+  \inferrule*[right=placeMove]{
+    \G \ent w : \langle t \rangle^m_{l_1}
+    \and
+    \writable \G w
+  }{
+    \G \ent \langle w : t \rangle_{l_2} \tne \move \G w
   }
   \and
   \inferrule*[right=placeMove]{
@@ -223,6 +247,12 @@
     \G \ent \mbrw w_1 \approx \mbrw w_2
   }
   \and
+  \inferrule*[right=$\approx$-box]{
+    \G \ent \tilde t_1 \approx \tilde t_2
+  }{
+    \G \ent \boxt \tilde t_1 \approx \boxt \tilde t_2
+  }
+  \and
   \inferrule*[right=$\approx$-partial$_1$]{
     \G \ent t_1 \approx \tilde t_2
   }{
@@ -270,12 +300,18 @@
     \G \ent \brw w : l_2
   }
   \and
-  \inferrule*[right=MutRefLftm]{
+  \inferrule*[right=mutRefLftm]{
     \G \ent w : \langle t \rangle^m_{l_1}
     \and
     l_1 \leq l_2
   }{
     \G \ent \mbrw w : l_2
+  }
+  \and
+  \inferrule*[right=boxLftm]{
+    \G \ent t : l
+  }{
+    \G \ent \boxt t : l
   }
   \and
   \inferrule*[right=assign]{

@@ -69,7 +69,7 @@
 
 \begin{mathpar}
   \inferrule*[right=var]{
-    (x \mapsto t^m) \in \G
+    (x \mapsto \langle t \rangle^m) \in \G
   }{
     \G \ent x : \langle t \rangle^m
   }
@@ -132,7 +132,7 @@
   }
   \and
   \inferrule*[right=writable]{
-    \nexists y . (y \mapsto \brw x) \in \G
+    \nexists y . (y \mapsto \langle \brw x \rangle^m) \in \G
   }{
     \writable \G x
   }
@@ -146,7 +146,7 @@
     \and
     \writable {\G_2} x
   }{
-    \G_1 \ent x \eqe e : \unt \tne \G_2[x \mapsto t_2^{\mutt}]
+    \G_1 \ent x \eqe e : \unt \tne \G_2[x \mapsto \langle t_2 \rangle^{\mutt}]
   }
   \and
   \inferrule*[right=let]{
@@ -154,7 +154,7 @@
     \and
     x \not \in \dom(\G_2)
   }{
-    \G_1 \ent \lete x \eqe e \tne \G_2[x \mapsto t^{\imm}]
+    \G_1 \ent \lete x \eqe e \tne \G_2[x \mapsto \langle t \rangle^{\imm}]
   }
   \and
   \inferrule*[right=letMut]{
@@ -162,7 +162,7 @@
     \and
     x \not \in \dom(\G_2)
   }{
-    \G_1 \ent \lete \mute x \eqe e \tne \G_2[x \mapsto t^{\mutt}]
+    \G_1 \ent \lete \mute x \eqe e \tne \G_2[x \mapsto \langle t \rangle^{\mutt}]
   }
   \and
   \inferrule*[right=exprStmt]{
